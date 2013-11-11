@@ -30,22 +30,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Set;
-
 import net.milkbowl.vault.economy.Economy;
-
-//import com.onarandombox.MultiverseCore.MultiverseCore;
-//import com.onarandombox.MultiverseCore.api.MultiverseWorld;
-//import com.onarandombox.MultiverseCore.utils.WorldManager;
-
-
-
-
-
-
-
-
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -69,10 +56,9 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     FileConfiguration config;
     FileConfiguration players;
     //FileConfiguration groups;
-    World worldDefault;
-    //World worldDefault = getServer().getWorlds().get(0);
-    //String defaultWorld = worldDefault.getName();
-    String defaultWorld = "world";
+    //World worldDefault = ;
+    String defaultWorld = Bukkit.getServer().getWorlds().get(0).getName();
+    //String defaultWorld = null;
     
    
     @Override
@@ -83,6 +69,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     
     @Override
 	public void onEnable() {
+    	//getLogger().info("Default world is: "+ defaultWorld);
     	//getLogger().info("onEnable has been invoked!");
 	    configFile = new File(getDataFolder(), "config.yml");
 	    playerFile = new File(getDataFolder() + "/userdata", "temp"); // not a real file
@@ -110,12 +97,14 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
         
         // Find out the default world and insert into the config
         if (config.getString("defaultWorld") == null) {
+        	//getLogger().info("No default world in the config.yml file.");
         	// Nothing in the config
         	config.set("defaultWorld",defaultWorld);
         	saveYamls();
         } else {
         	// Grab the new default world from config.yml
         	defaultWorld = config.getString("defaultWorld");
+        	//getLogger().info("Default world in the config.yml file is:" + defaultWorld);
         }
         
     	// Send stats
@@ -125,9 +114,6 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	} catch (IOException e) {
     	    // Failed to submit the stats :-(
     	}
-    	
-
-        
 	}
 	
     private boolean setupEconomy() {
@@ -148,7 +134,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
         mvCore = (MultiverseCore) this.getServer().getPluginManager().getPlugin("Multiverse-Core");
         // Test if the Core was found
         if (mvCore == null) {
-        	getLogger().info("Multiverse-Core not found.");
+        	getLogger().info("MWM: Multiverse-Core not found.");
         	return false;
         } else {
         	this.core = mvCore;
@@ -188,6 +174,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	            e.printStackTrace();
 	        }
 		} else {
+			// First time player has moved world
 			playerFile.getParentFile().mkdirs(); // just make the directory
 			// First time to change a world
 			// Find out if they are going to the default world. If so, they keep their balance.
@@ -218,17 +205,8 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	        configFile.getParentFile().mkdirs();
 	        copy(getResource("config.yml"), configFile);
 	    }
-	    //if(!playerFile.exists()){
-	    //    playerFile.getParentFile().mkdirs(); // just make the directory - maybe not needed
-	    //}
-	    //if(!groupsFile.exists()){
-	    //    groupsFile.getParentFile().mkdirs();
-	    //    copy(getResource("groups.yml"), groupsFile);
-	    //}
-	    
-	    worldDefault = getServer().getWorlds().get(0);
-	    defaultWorld = worldDefault.getName();
 	}
+	
 	private void copy(InputStream in, File file) {
 	    try {
 	        OutputStream out = new FileOutputStream(file);
@@ -265,7 +243,6 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
      */
     public void saveYamls() {
         try {
-        	// Config and groups are not changed yet, but it doesn't matter to save them
             config.save(configFile); //saves the FileConfiguration to its File
             //groups.save(groupsFile);
             players.save(playerFile);
@@ -274,60 +251,99 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
         }
     }
  
+    private String MVCoreAlias(String worldName) {
+    	// Returns the MultiWord Core alias if it exists and if not the same as what was provided
+    	String newName = core.getMVWorldManager().getMVWorld(worldName).getAlias();
+    	if (newName != null) {
+    		return newName;
+    	} else {
+    		return worldName;
+    	}
+    }
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
-    	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /networth then do the following...
-    		// Find out who sent the command
-    		String requestedPlayer = sender.getName();
-    		// Find out where I am
-    		String playerWorld = sender.getServer().getPlayer(requestedPlayer).getWorld().getName();
-    		//getLogger().info("Default player =" + requestedPlayer + " in " + playerWorld);
-    		// Check if there is a player name associated with the command
-    		/*
-    		 * if (args[0] != "") {
-    		
-    			requestedPlayer = args[0];
-    		}*/
-    		//getLogger().info();
-    		// Look up details on that player
-    		playerFile = new File(getDataFolder() + "/userdata", requestedPlayer + ".yml");
-    		if (playerFile.exists()) {
-    			// The player exists
-    			players = new YamlConfiguration();
-    	    	// Get the YAML file for this player
-    	    	try {
-    	    		players.load(playerFile);
-    	    	} catch (Exception e) {
-    	            e.printStackTrace();
-    	        }
-    	    	// Step through file and print out balances for each world and total at the end
-    	    	Double networth = 0.0;
-    	    	Double worldBalance = 0.0;
-    	    	Set<String> worldList = players.getKeys(false);
-    	    	for (String s: worldList) {
-    	    		//getLogger().info("World in file = "+s);
-    	    		// Ignore the world I am in
-    	    		if (s.equals(playerWorld)) {
-    	    			worldBalance = econ.getBalance(requestedPlayer);
-    	    			//getLogger().info("I am in this world and my balance is " + worldBalance);
-    	    		} else {
-    	    			worldBalance = players.getDouble(s+".money");
-    	    		}
-    	    		networth += worldBalance;
-    	    		// Display balance in each world
-    	    		// The line below can be used to grab all world names
-    	    		// Collection<MultiverseWorld> wmList = core.getMVWorldManager().getMVWorlds();
-    	    		String newName = core.getMVWorldManager().getMVWorld(s).getAlias();
-    	    		if (newName != null) {
-    	    			s = newName;
-    	    		}
-    	    		sender.sendMessage(String.format(s + " " + ChatColor.GOLD + econ.format(worldBalance)));
-    	    	}
-    	    	sender.sendMessage(String.format(ChatColor.GOLD + "Total balance is " + econ.format(networth)));
+    	// Filter out bad commands
+    	if (args.length > 2) {
+            sender.sendMessage("Too many arguments!");
+            return false;
+         }     	
+    	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /balance then do the following...
+    		if (!(sender instanceof Player)) {
+    			sender.sendMessage("This command can only be run by a player.");
+    		} else {    			
+	    		// Find out who sent the command
+	    		String requestedPlayer = sender.getName();
+	    		// Find out where I am
+	    		String playerWorld = sender.getServer().getPlayer(requestedPlayer).getWorld().getName();
+	    		// Look up details on that player
+	    		playerFile = new File(getDataFolder() + "/userdata", requestedPlayer + ".yml");
+	    		// If the player exists in MWM database then...
+	    		if (playerFile.exists()) {
+	    			//getLogger().info("Player exists");
+	    			// The player exists
+	    			players = new YamlConfiguration();
+	    	    	// Get the YAML file for this player
+	    	    	try {
+	    	    		players.load(playerFile);
+	    	    	} catch (Exception e) {
+	    	            e.printStackTrace();
+	    	        }
+	    	    	// Write or update the current world balance
+	    	    	players.set(playerWorld + ".money", econ.getBalance(requestedPlayer));
+	    	    	// Step through file and print out balances for each world and total at the end
+	    	    	Double networth = 0.0;
+	    	    	Double worldBalance = 0.0;
+	    	    	Set<String> worldList = players.getKeys(false);
+	    	    	for (String s: worldList) {
+	    	    		//getLogger().info("World in file = "+s);
+	    	    		// Ignore the world I am in
+	    	    		if (s.equals(playerWorld)) {
+	    	    			worldBalance = econ.getBalance(requestedPlayer);
+	    	    			//getLogger().info("I am in this world and my balance is " + worldBalance);
+	    	    		} else {
+	    	    			worldBalance = players.getDouble(s+".money");
+	    	    		}
+	    	    		networth += worldBalance;
+	    	    		// Display balance in each world
+	    	    		// The line below can be used to grab all world names
+	    	    		// Collection<MultiverseWorld> wmList = core.getMVWorldManager().getMVWorlds();
+	    	    		sender.sendMessage(String.format(MVCoreAlias(s) + " " + ChatColor.GOLD + econ.format(worldBalance)));
+	    	    	}
+	    	    	sender.sendMessage(String.format(ChatColor.GOLD + "Total balance is " + econ.format(networth)));
+	    		} else {
+	    			// The player is not in our database yet so just show their current balance
+	    			// Put them into the database and write their balance to the default world
+	    			Double oldBalance = econ.getBalance(requestedPlayer);
+	    	    	players.set(defaultWorld + ".money", oldBalance);
+	    	    	if (playerWorld.equals(defaultWorld)) {
+	    	    		//getLogger().info("Player in default world");
+	    				// Show balance in default world
+	    				sender.sendMessage(String.format(MVCoreAlias(defaultWorld) + " " + ChatColor.GOLD + econ.format(oldBalance)));
+	    				sender.sendMessage(String.format(ChatColor.GOLD + "Total balance is " + econ.format(oldBalance)));
+	    	    		
+	    			} else {
+	    				//getLogger().info("Player not in default world");
+	    	    		// Zero out our current balance
+	    	    		econ.withdrawPlayer(sender.getName(), oldBalance);
+	    	    		// Show balance in default world and current world
+	    	    		sender.sendMessage(String.format(MVCoreAlias(defaultWorld) + " " + ChatColor.GOLD + econ.format(oldBalance)));
+	    	    		sender.sendMessage(String.format(MVCoreAlias(playerWorld) + " " + ChatColor.GOLD + econ.format(0)));
+	    	    		sender.sendMessage(String.format(ChatColor.GOLD + "Total balance is " + econ.format(oldBalance)));
+	    			}
+	    		}
+        		// Save it
+        		try {
+        			players.save(playerFile);
+        		} catch (Exception e) {
+        			e.printStackTrace();
+        		}
+	    		return true;
     		}
-    		return true;
-    	} //If this has happened the function will return true. 
-            // If this hasn't happened the a value of false will be returned.
+    	} else if(cmd.getName().equalsIgnoreCase("mwmreload")){
+    		// Reload the config file
+    		loadYamls();
+    	} 
+        // If this hasn't happened the a value of false will be returned.
     	return false; 
     }
 }

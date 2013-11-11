@@ -1,6 +1,6 @@
 name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
-version: 1.2
+version: 1.3
 depend: [Vault]
 softdepend: [Multiverse-Core]
 commands:
@@ -8,4 +8,9 @@ commands:
       description: This tells you how much money you have across all worlds.
       usage: /<command> [player]
       permission: multiworldmoney.balance
+      permission-message: You don't have <permission>
+   mwmreload:
+      description: Reloads the MultiWorldMoney config file
+      usage: /<command>
+      permission: multiworldmoney.reload
       permission-message: You don't have <permission>
