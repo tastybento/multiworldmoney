@@ -29,25 +29,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import net.milkbowl.vault.economy.Economy;
 
-//import com.onarandombox.MultiverseCore.MultiverseCore;
-//import com.onarandombox.MultiverseCore.api.MultiverseWorld;
-//import com.onarandombox.MultiverseCore.utils.WorldManager;
-
-
-
-
-
-
-
-
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -70,6 +65,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     FileConfiguration players;
     //FileConfiguration groups;
     World worldDefault;
+    private static HashMap<String,String> worldgroups = new HashMap<String,String>();
     //World worldDefault = getServer().getWorlds().get(0);
     //String defaultWorld = worldDefault.getName();
     String defaultWorld = "world";
@@ -160,7 +156,15 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	public void onWorldLoad(PlayerChangedWorldEvent event) {
 		// Find out who is moving world
 		Player player = event.getPlayer();
-		
+		// Check to see if they are in a grouped world
+		// TODO:
+		// Pseudocode
+		// If new world is in same group as old world, move the money from one world to the other
+		// If player moves from a world outside a group into a group, then add up all the balances in that group, zero them out and give them to the player and set the new world balance to be the total
+		// If a player moves within a group, then zero out from the old world and move to the new (to keep the net worth correct) - Done
+		// If a player moves from a group to a world outside a group (or another group) then leave the balance in the last world.
+		//getLogger().info("Old world name is: "+ event.getFrom().getName());
+		//getLogger().info("New world name is: "+ player.getWorld().getName());
 		// Initialize and retrieve the current balance of this player
 		Double oldBalance = econ.getBalance(player.getName());
 		Double newBalance = 0.0; // Always zero to start - in future change to a config value
@@ -172,18 +176,52 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    	// Get the YAML file for this player
 	    	try {
 	    		players.load(playerFile);
-	    		// Save the old balance
-	    		players.set(event.getFrom().getName() + ".money", oldBalance);
-	    		// Zero out our current balance - Vault does not allow balances to be set to an arbitrary amount
-	    		// I have some concerns about race conditions here. Technically a user could be given money in this process
-	    		econ.withdrawPlayer(player.getName(), oldBalance);
-	    		// Grab new balance from new world, if it exists, otherwise it is zero
-	    		newBalance = players.getDouble((player.getWorld().getName() + ".money"));
-	    		// Apply new balance to player;
-	    		econ.depositPlayer(player.getName(), newBalance);
-	    		players.save(playerFile);
-	    		// Tell the user
-	    		player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(newBalance)));
+	    		// Save the old balance unless the player is moving within a group of worlds
+	    		// If both these worlds are in the groups.yml file, they may be linked
+	    		if (worldgroups.containsKey(event.getFrom().getName()) && worldgroups.containsKey(player.getWorld().getName())) {
+	    			if (worldgroups.get(event.getFrom().getName()).equalsIgnoreCase(worldgroups.get(player.getWorld().getName()))) {
+	    				//getLogger().info("Old world and new world are in the same group!");
+	    				// Set the balance in the old world to zero
+	    				players.set(event.getFrom().getName() + ".money", 0.0);
+	    				// Player keeps their current balance plus any money that is in this new world   				
+	    			} 
+	    		} else {
+	    			// These worlds are not in the same group
+    				// Save the balance in the old world
+    				players.set(event.getFrom().getName() + ".money", oldBalance);
+    	    		// Zero out our current balance - Vault does not allow balances to be set to an arbitrary amount
+    	    		econ.withdrawPlayer(player.getName(), oldBalance);
+    			}
+	    		// Player's balance at this point should be zero 0.0
+	    		// Sort out the balance for the new world
+	    		if (worldgroups.containsKey(player.getWorld().getName())) {
+	    			// The new world in is a group
+	    			//getLogger().info("The new world is in a group");
+	    			// Step through each world, apply the balance and zero out balances if they are not in that world
+	    			String groupName = worldgroups.get(player.getWorld().getName());
+	    			//getLogger().info("Group name = " + groupName);
+	    			// Get the name of each world in the group
+	    			Set<String> keys = worldgroups.keySet();
+	    			for (String key:keys) {
+	    				//getLogger().info("World:" + key);
+	    				if (worldgroups.get(key).equals(groupName)) {
+	    					// The world is in the same group as this one
+	    					//getLogger().info("The new world is in group "+groupName);
+	    					newBalance = players.getDouble(key + ".money");
+	    					//getLogger().info("Balance in world "+ key+ " = $"+newBalance);
+	    					econ.depositPlayer(player.getName(), newBalance);
+	    					// Zero out the old amount
+	    					players.set(key + ".money", 0.0);
+	    				}
+	    			}
+	    		} else {
+	    			// This world is not in a group
+		    		// Grab new balance from new world, if it exists, otherwise it is zero
+		    		newBalance = players.getDouble((player.getWorld().getName() + ".money"));
+		    		// Apply new balance to player;
+		    		econ.depositPlayer(player.getName(), newBalance);
+	    		// If the new world is in a group, then take the value of all the worlds together
+	    		}
 	    	} catch (Exception e) {
 	            e.printStackTrace();
 	        }
@@ -199,18 +237,19 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    		players.set(defaultWorld + ".money", oldBalance);
 	    		// Zero out our current balance
 	    		econ.withdrawPlayer(player.getName(), oldBalance);
-	    		player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(0.0)));
-			} else {
-				// Tell the user
-				player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(oldBalance)));
-			}
-    		// Save it
-    		try {
-    			players.save(playerFile);
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
-	    }
+			} 
+ 	    }
+		// Tell the user
+		player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(econ.getBalance(player.getName()))));
+		// Write the balance to this world
+		players.set(player.getWorld().getName() + ".money", econ.getBalance(player.getName()));
+		// Save the player file just in case there is a server problem
+   		try {
+			players.save(playerFile);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 	}
 	
 	private void firstRun() throws Exception {
@@ -253,11 +292,66 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
         try {
             config.load(configFile); //loads the contents of the File to its FileConfiguration
             //groups.load(groupsFile);
+            loadGroups();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
+    
+    public static void loadGroups() {
+        YamlConfiguration groups = loadYamlFile("groups.yml");
+        if(groups == null) {
+            //MultiInv.log.info("No groups.yml found. Creating example file...");
+            groups = new YamlConfiguration();
+            
+            ArrayList<String> exampleGroup = new ArrayList<String>();
+            exampleGroup.add("world");
+            exampleGroup.add("world_nether");
+            exampleGroup.add("world_the_end");
+            groups.set("exampleGroup", exampleGroup);
+            saveYamlFile(groups, "groups.yml");
+        }
+        parseGroups(groups);
+        
+    }
+    
+    public static void parseGroups(Configuration config) {
+        worldgroups.clear();
+        Set<String> keys = config.getKeys(false);
+        for(String group : keys) {
+            List<String> worlds = config.getStringList(group);
+            for(String world : worlds) {
+                worldgroups.put(world, group);
+            }
+        }
+    }
+    
+    public static YamlConfiguration loadYamlFile(String file) {
+        File dataFolder = Bukkit.getServer().getPluginManager().getPlugin("MultiWorldMoney").getDataFolder();
+        File yamlFile = new File(dataFolder, file);
+        
+        YamlConfiguration config = null;
+        if(yamlFile.exists()) {
+            try {
+                config = new YamlConfiguration();
+                config.load(yamlFile);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return config;
+    }
+    public static void saveYamlFile(YamlConfiguration yamlFile, String fileLocation) {
+        File dataFolder = Bukkit.getServer().getPluginManager().getPlugin("MultiWorldMoney").getDataFolder();
+        File file = new File(dataFolder, fileLocation);
+        
+        try {
+            yamlFile.save(file);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+   
     /*
      * save all FileConfigurations to its corresponding File
      * optional at onDisable()
@@ -266,7 +360,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     public void saveYamls() {
         try {
         	// Config and groups are not changed yet, but it doesn't matter to save them
-            config.save(configFile); //saves the FileConfiguration to its File
+            //config.save(configFile); //saves the FileConfiguration to its File
             //groups.save(groupsFile);
             players.save(playerFile);
         } catch (IOException e) {
@@ -276,12 +370,12 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
  
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
-    	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /networth then do the following...
+    	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /balance then do the following...
     		// Find out who sent the command
     		String requestedPlayer = sender.getName();
     		// Find out where I am
     		String playerWorld = sender.getServer().getPlayer(requestedPlayer).getWorld().getName();
-    		//getLogger().info("Default player =" + requestedPlayer + " in " + playerWorld);
+    		getLogger().info("Default player =" + requestedPlayer + " in " + playerWorld);
     		// Check if there is a player name associated with the command
     		/*
     		 * if (args[0] != "") {
@@ -323,7 +417,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	    		}
     	    		sender.sendMessage(String.format(s + " " + ChatColor.GOLD + econ.format(worldBalance)));
     	    	}
-    	    	sender.sendMessage(String.format(ChatColor.GOLD + "Total balance is " + econ.format(networth)));
+    	    	sender.sendMessage(String.format(ChatColor.GOLD + "Total across all worlds is " + econ.format(networth)));
     		}
     		return true;
     	} //If this has happened the function will return true. 
