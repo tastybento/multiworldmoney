@@ -7,5 +7,19 @@ commands:
    balance:
       description: This tells you how much money you have across all worlds.
       usage: /<command> [player]
-      permission: multiworldmoney.balance
+      permission: mwm.balance
       permission-message: You don't have <permission>
+   mwm:
+      description: MultiWorldMoney command
+      usage: /<command>
+permissions:
+   mwm.balance:
+      description: Gives access to the balance command
+      default: true
+   mwm.reload:
+      description: Reloads the groups.yml file
+      default: op
+   mwm.pay:
+      description: Allows use of the mwm pay command across worlds
+      default: op
+      

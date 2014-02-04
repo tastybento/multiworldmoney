@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Ben Gibbs. All rights reserved.
+ * Copyright 2013-14 Ben Gibbs. All rights reserved.
  *
  *     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
  
  ****************************************************************************
  * This software is a plugin for the Bukkit Minecraft Server				*
- * It provides a way, independent of economy to keep balances separate    	*
- * between worlds.															*
+ * It keeps balances separate  between worlds							  	*
+ * Requires Vault and some kind of Economy															*
  ****************************************************************************
  
  */
@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +38,7 @@ import net.milkbowl.vault.economy.Economy;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -47,8 +47,11 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -151,20 +154,48 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
         	return true;
         }
     }
+    
+    // When a player logs in, we need to update their balance with any money that is in any world that is in the same group
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onLogin(PlayerJoinEvent event) {
+    	Player player = event.getPlayer();
+    	String playerWorld = player.getWorld().getName();
+    	String playerName = player.getName();
+    	// getLogger().info(playerName + " logged in to " + playerWorld + " and they have " + econ.getBalance(playerName));
+    	// Go through each world and if they are in the same group, grab that world's balance and add it to the player's current balance
+    	for (String world: worldgroups.keySet()) {
+    		// getLogger().info("Loop value = " + world);
+    		if (inWorldGroup(world, playerWorld) && !world.equals(playerWorld)) {
+    			// Remove any money from the world in the group
+    			econ.depositPlayer(playerName, mwmBalance(playerName,world));
+    			mwmSet(playerName,0.0,world);
+    		}
+    	}
+    }
+ 
+    // When a player logs out, we need to store the world where they last were
+    @EventHandler(ignoreCancelled = true)
+    public void onLogout(PlayerQuitEvent event) {
+    	Player player = event.getPlayer();
+    	String playerWorld = player.getWorld().getName();
+    	String playerName = player.getName();
+    	mwmSaveOfflineWorld(playerName,playerWorld);
+    }
+
+    
     // This is the main event handler of this plugin. It adjusts balances when a player changes world
 	@EventHandler(ignoreCancelled = true)
 	public void onWorldLoad(PlayerChangedWorldEvent event) {
 		// Find out who is moving world
 		Player player = event.getPlayer();
 		// Check to see if they are in a grouped world
-		// TODO:
-		// Pseudocode
 		// If new world is in same group as old world, move the money from one world to the other
 		// If player moves from a world outside a group into a group, then add up all the balances in that group, zero them out and give them to the player and set the new world balance to be the total
 		// If a player moves within a group, then zero out from the old world and move to the new (to keep the net worth correct) - Done
 		// If a player moves from a group to a world outside a group (or another group) then leave the balance in the last world.
 		//getLogger().info("Old world name is: "+ event.getFrom().getName());
 		//getLogger().info("New world name is: "+ player.getWorld().getName());
+		//getLogger().info("Player's balance point 1 is "+econ.getBalance(player.getName()));
 		// Initialize and retrieve the current balance of this player
 		Double oldBalance = econ.getBalance(player.getName());
 		Double newBalance = 0.0; // Always zero to start - in future change to a config value
@@ -180,19 +211,28 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    		// If both these worlds are in the groups.yml file, they may be linked
 	    		if (worldgroups.containsKey(event.getFrom().getName()) && worldgroups.containsKey(player.getWorld().getName())) {
 	    			if (worldgroups.get(event.getFrom().getName()).equalsIgnoreCase(worldgroups.get(player.getWorld().getName()))) {
-	    				//getLogger().info("Old world and new world are in the same group!");
+	    				// getLogger().info("Old world and new world are in the same group!");
 	    				// Set the balance in the old world to zero
 	    				players.set(event.getFrom().getName() + ".money", 0.0);
 	    				// Player keeps their current balance plus any money that is in this new world   				
-	    			} 
+	    			} else {
+		    			// These worlds are not in the same group
+		    			//getLogger().info("Old world and new world are NOT in the same group!");
+	    				// Save the balance in the old world
+	    				players.set(event.getFrom().getName() + ".money", oldBalance);
+	    	    		// Zero out our current balance - Vault does not allow balances to be set to an arbitrary amount
+	    	    		econ.withdrawPlayer(player.getName(), oldBalance);
+	    			}
 	    		} else {
-	    			// These worlds are not in the same group
+	    			// At least one or both are not in the groups file. Therefore, they are NOT in the same group
+	    			//getLogger().info("Old world and new world are NOT in the same group!");
     				// Save the balance in the old world
     				players.set(event.getFrom().getName() + ".money", oldBalance);
     	    		// Zero out our current balance - Vault does not allow balances to be set to an arbitrary amount
     	    		econ.withdrawPlayer(player.getName(), oldBalance);
-    			}
+	    		}
 	    		// Player's balance at this point should be zero 0.0
+	    		//getLogger().info("Player's balance should be zero at point 2 is "+econ.getBalance(player.getName()));
 	    		// Sort out the balance for the new world
 	    		if (worldgroups.containsKey(player.getWorld().getName())) {
 	    			// The new world in is a group
@@ -214,6 +254,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    					players.set(key + ".money", 0.0);
 	    				}
 	    			}
+	    			//getLogger().info("Player's balance point 3 is "+econ.getBalance(player.getName()));
 	    		} else {
 	    			// This world is not in a group
 		    		// Grab new balance from new world, if it exists, otherwise it is zero
@@ -221,6 +262,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		    		// Apply new balance to player;
 		    		econ.depositPlayer(player.getName(), newBalance);
 	    		// If the new world is in a group, then take the value of all the worlds together
+		    		//getLogger().info("Player's balance point 4 is "+econ.getBalance(player.getName()));
 	    		}
 	    	} catch (Exception e) {
 	            e.printStackTrace();
@@ -237,6 +279,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    		players.set(defaultWorld + ".money", oldBalance);
 	    		// Zero out our current balance
 	    		econ.withdrawPlayer(player.getName(), oldBalance);
+	    		//getLogger().info("Player's balance point 5 is "+econ.getBalance(player.getName()));
 			} 
  	    }
 		// Tell the user
@@ -368,14 +411,233 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
         }
     }
  
+    private boolean inWorldGroup(String world1, String world2) {
+    	// Check to see if both these worlds are in groups.yml, if not, they are not in the same group
+    	if (worldgroups.containsKey(world1) && worldgroups.containsKey(world2)) {
+    		if (worldgroups.get(world1).equals(worldgroups.get(world2))) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    
+    private void mwmDeposit(String playerName, Double amount, String world) {
+    	Double oldBalance = 0.0;
+		// Create a new player file if one does not exist
+		playerFile = new File(getDataFolder() + "/userdata", playerName + ".yml");
+		if (playerFile.exists()) {
+	    	// Get the YAML file for this player and any deposit that may exist
+	    	try {
+	    		players.load(playerFile);
+	    		oldBalance = players.getDouble(world + ".money");
+	    	} catch (Exception e) {	    		
+	    	}
+		}
+		// getLogger().info("Deposited " + econ.format(amount) + "\n to " + econ.format(oldBalance) + "in " + playerName + "'s account in world " + world);
+		// Deposit
+	    players.set(world + ".money", amount + oldBalance);
+	    saveYamls();
+    }
+
+    private void mwmWithdraw(String playerName, Double amount, String world) {
+    	Double oldBalance = 0.0;
+		// Create a new player file if one does not exist
+		playerFile = new File(getDataFolder() + "/userdata", playerName + ".yml");
+		if (playerFile.exists()) {
+	    	// Get the YAML file for this player and any deposit that may exist
+	    	try {
+	    		players.load(playerFile);
+	    		oldBalance = players.getDouble(world + ".money");
+	    	} catch (Exception e) {	    		
+	    	}
+		} 
+		// getLogger().info("Withdrew " + econ.format(amount) + "\n from " + econ.format(oldBalance) + " in " + playerName + "'s account in world " + world);
+		// Withdraw
+	    players.set(world + ".money", oldBalance - amount);
+	    saveYamls();
+    }
+    
+    private void mwmSet(String playerName, Double amount, String world) {
+		// Create a new player file if one does not exist
+		playerFile = new File(getDataFolder() + "/userdata", playerName + ".yml");
+		// getLogger().info("Set balance to " + econ.format(amount) + " for " + playerName + " in world " + world);
+		// Set
+	    players.set(world + ".money", amount);
+	    saveYamls();
+    }
+      
+    private double mwmBalance(String playerName, String world) {
+    	Double balance = 0.0;
+		// Create a new player file if one does not exist
+		playerFile = new File(getDataFolder() + "/userdata", playerName + ".yml");
+		if (playerFile.exists()) {
+	    	// Get the YAML file for this player and any balance that may exist
+	    	try {
+	    		players.load(playerFile);
+	    		balance = players.getDouble(world + ".money");
+	    	} catch (Exception e) {	    		
+	    	}
+		}
+		// getLogger().info("Balance is " + econ.format(balance) + " in world " + world);
+		return balance;
+    }
+    
+    private void mwmSaveOfflineWorld(String playerName, String playerWorld) {
+		// Create a new player file if one does not exist
+		playerFile = new File(getDataFolder() + "/userdata", playerName + ".yml");
+		if (playerFile.exists()) {
+	    	// Get the YAML file for this player
+	    	try {
+	    		players.load(playerFile);
+	    	} catch (Exception e) {	    		
+	    	}
+		}
+		// Save the logout flag
+		// Note, even if someone has a world called "offline_world" this will still work
+	    players.set("offline_world.name", playerWorld);
+	    saveYamls();  
+    }
+    
+    private String mwmReadOfflineWorld(String playerName) {
+    	// Responds with the world that the player logged out in, if any otherwise null
+		// Create a new player file if one does not exist
+		playerFile = new File(getDataFolder() + "/userdata", playerName + ".yml");
+		if (playerFile.exists()) {
+	    	// Get the YAML file for this player
+	    	try {
+	    		players.load(playerFile);
+	    		return players.getString("offline_world.name");
+	    	} catch (Exception e) {	
+	    	}
+		}
+		// The player does not have a file, and therefore does not have an offline world
+		return null;
+    }
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
+    	// MWM command
+    	if(cmd.getName().equalsIgnoreCase("mwm")) {
+    		//  Reload command
+    		if (args.length == 0) {
+    			// No argument, tell the user what commands are available
+    			sender.sendMessage(String.format(ChatColor.GOLD + "MultiWorldMoney commands:\n/balance - shows balance across all worlds"));
+    			
+    			// Check if the player has permission
+    			if (sender.hasPermission("mwm.reload")) {
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm reload - Reloads the groups.yml file"));
+    			}
+    			if (sender.hasPermission("mwm.pay")) {
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm pay <player> <amount> <world> - Pays a player an amount from your balance to a specific world"));
+    			}
+    			return true;
+    		} else {
+    			// Check the first argument
+    			if (args[0].equalsIgnoreCase("reload")) {
+    				// Check permission
+    				if (!sender.hasPermission("mwm.reload")) {
+    					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+    				} else {
+	    				// Reload groups
+	    				loadGroups();
+	  			        sender.sendMessage(String.format(ChatColor.GOLD + "MultiWorldMoney groups reloaded"));
+    				}
+    				return true;
+    			} else if (args[0].equalsIgnoreCase("pay")) {
+    				// Pay command
+   					// Check that this command is being issued by a player on the server and not command line
+					if (!(sender instanceof Player)) {
+						sender.sendMessage("This command can only be run by a player.");
+						return true;
+					}
+    				// Check permission
+    				if (!sender.hasPermission("mwm.pay")) {
+    					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+						return true;
+    				}
+    				// Check that the right number of arguments are provided
+    				if (args.length != 4) {
+    					sender.sendMessage(String.format(ChatColor.GOLD + "/mwm pay <player> <amount> <world> - Pays a player an amount from your balance to a specific world"));
+    					return true;
+    				} else {
+     					// Check the other arguments one by one
+    					// Check if the player exists and can receive money
+    					OfflinePlayer op = Bukkit.getServer().getOfflinePlayer(args[1].toString());
+    					double am = Double.parseDouble(args[2]);
+    					String targetWorld = args[3].toLowerCase();
+    			        if (op.hasPlayedBefore()){
+    			            // We know this player, so check if the amount is a value
+    			        	if (am <= 0.0) {
+    	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "Amounts should be positive."));
+        			        	return true;    			        		
+    			        	} else {
+    			        		// Check that the player has enough money
+    			        		if (am > econ.getBalance(sender.getName())) {
+    			        			sender.sendMessage(String.format(ChatColor.GOLD + "Sorry, you only have " + econ.format(econ.getBalance(sender.getName())) + " in this world."));
+            			        	return true; 
+    			        		}
+    			        		// Check the world is valid
+    			        		if (Bukkit.getWorld(targetWorld) == null) {
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + targetWorld + " is an unknown world."));
+            			        	return true;    			        		   			        			
+    			        		} else {
+    	   	   			        	// Find out if the player is offline or online
+    	   	   			        	if (op.isOnline()) {
+    	   	   			        		// getLogger().info("Target is online");
+    	   	   			        		
+    	   	   			        		String recWorld = op.getPlayer().getWorld().getName();
+    	   	   			        		// If the person is online and in the world that is the designated world or the same group, then just add to their balance
+    	   	   			        		if (recWorld.equals(targetWorld) || inWorldGroup(targetWorld,recWorld)) {
+    	   	   			        			// getLogger().info("Target is in target world or both worlds are in the same group");
+    	   	   			        			econ.depositPlayer(op.getPlayer().getName(), am);
+    	   	   			        			op.getPlayer().sendMessage(String.format(ChatColor.GOLD + sender.getName() + " paid you " + econ.format(am)));
+    	   	   			        		} else {
+    	   	   			        			// They are in a totally different world. Add it to the MWM database
+    	   	   			        			// getLogger().info("Target is not in the target world or group");
+    	   	   			        			// Deposit the amount to the named player
+    	   	   			        			mwmDeposit(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	} else {
+    	   	   			        		// Offline player - deposit the money in that world's account
+     	   	   			        		// getLogger().info("Target is offline");
+     	   	   			        		// If the player logged out in the world where the payment is being sent then credit the economy
+    	   	   			        		// Otherwise credit MWM account
+     	   	   			        		String offlineWorld = mwmReadOfflineWorld(op.getName());
+     	   	   			        		// If the player is offline and we do not know which world they were in when they logged off then we cannot accept payment
+     	   	   			        		if (offlineWorld == null) {
+     	   	   			        			sender.sendMessage(String.format(ChatColor.RED + "Sorry, you cannot pay that offline player yet. They need to login at least one more time."));  	
+     	   	   			        			return true;
+     	   	   			        		}
+     	   	   			        		if (offlineWorld.equalsIgnoreCase(targetWorld)) {
+     	   	   			        			// getLogger().info("Target's offline is the same as the pay to world");
+    	   	   			        			econ.depositPlayer(op.getName(), am);
+    	   	   			        		} else {
+    	   	   			        			// getLogger().info("Target's offline is different to the pay to world");
+    	   	   			        			mwmDeposit(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	}
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "You paid " + econ.format(am) + " to " + op.getName() + " in " + args[3]));
+    	   	   			        	// Deduct the amount from the player
+    	   	   			        	econ.withdrawPlayer(sender.getName(), am);
+    	   	   			        	return true;    			        		
+    			        		}
+    			        	}
+    			        }else{
+    			        	sender.sendMessage(String.format(ChatColor.GOLD + op.getName() + " is not a recognised player"));
+    			        	return true;
+    			        }
+    				}
+    			} else {
+    				return false;
+    			}
+    		}
+    	}
+    	// Balance command
     	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /balance then do the following...
     		// Find out who sent the command
     		String requestedPlayer = sender.getName();
     		// Find out where I am
     		String playerWorld = sender.getServer().getPlayer(requestedPlayer).getWorld().getName();
-    		getLogger().info("Default player =" + requestedPlayer + " in " + playerWorld);
+    		//getLogger().info("Default player =" + requestedPlayer + " in " + playerWorld);
     		// Check if there is a player name associated with the command
     		/*
     		 * if (args[0] != "") {
@@ -411,11 +673,16 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	    		// Display balance in each world
     	    		// The line below can be used to grab all world names
     	    		// Collection<MultiverseWorld> wmList = core.getMVWorldManager().getMVWorlds();
-    	    		String newName = core.getMVWorldManager().getMVWorld(s).getAlias();
-    	    		if (newName != null) {
+    	    		try {
+    	    			String newName = core.getMVWorldManager().getMVWorld(s).getAlias();
     	    			s = newName;
+    	    		} catch (Exception e) {
+    	    			// Multiverse does not know about this world, so don't show the alias
     	    		}
-    	    		sender.sendMessage(String.format(s + " " + ChatColor.GOLD + econ.format(worldBalance)));
+    	    		// Only show positive balances
+    	    		if (worldBalance>0.0) {
+    	    			sender.sendMessage(String.format(s + " " + ChatColor.GOLD + econ.format(worldBalance)));
+    	    		}
     	    	}
     	    	sender.sendMessage(String.format(ChatColor.GOLD + "Total across all worlds is " + econ.format(networth)));
     		}
