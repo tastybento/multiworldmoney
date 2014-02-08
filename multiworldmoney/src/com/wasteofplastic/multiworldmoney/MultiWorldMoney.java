@@ -524,7 +524,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     			
     			// Check if the player has permission
        			if (sender.hasPermission("mwm.playerbalance")) {
-    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm balance <name> - Shows balance of player with name <name>"));
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/balance <name> - Shows balance of player with name <name>"));
     			}
     			if (sender.hasPermission("mwm.reload")) {
     				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm reload - Reloads the groups.yml file"));
@@ -532,6 +532,15 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     			if (sender.hasPermission("mwm.pay")) {
     				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm pay <player> <amount> <world> - Pays a player an amount from your balance to a specific world"));
     			}
+    			if (sender.hasPermission("mwm.give")) {
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm give <player> <amount> <world> - Gives a player an amount in a specific world"));
+    			}
+    			if (sender.hasPermission("mwm.set")) {
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm set <player> <amount> <world> - Sets a player's balance to amount in a specific world"));
+    			}
+    			if (sender.hasPermission("mwm.take")) {
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm take <player> <amount> <world> - Takes an amount from a player in a specific world."));
+    			}    			
     			return true;
     		} else {
     			// Check the first argument
@@ -545,6 +554,227 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	  			        sender.sendMessage(String.format(ChatColor.GOLD + "MultiWorldMoney groups reloaded"));
     				}
     				return true;
+    			} else if (args[0].equalsIgnoreCase("set")) {
+    				// Set command
+    				// Check permission
+    				if (!sender.hasPermission("mwm.set")) {
+    					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+						return true;
+    				}
+    				// Check that the right number of arguments are provided
+    				if (args.length != 4) {
+    					sender.sendMessage(String.format(ChatColor.GOLD + "/mwm set <player> <amount> <world> - Sets a player's balance in world"));
+    					return true;
+    				} else {
+     					// Check the other arguments one by one
+    					// Check if the player exists and can receive money
+    					OfflinePlayer op = Bukkit.getServer().getOfflinePlayer(args[1].toString());
+    					double am = Double.parseDouble(args[2]);
+    					String targetWorld = args[3].toLowerCase();
+    			        if (op.hasPlayedBefore()){
+    			            // We know this player, so check if the amount is a value
+    			        	if (am < 0.0) {
+    	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "Amounts should be positive."));
+        			        	return true;    			        		
+    			        	} else {
+    			        		// Check the world is valid
+    			        		if (Bukkit.getWorld(targetWorld) == null) {
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + targetWorld + " is an unknown world."));
+            			        	return true;    			        		   			        			
+    			        		} else {
+    	   	   			        	// Find out if the player is offline or online
+    	   	   			        	if (op.isOnline()) {
+    	   	   			        		// getLogger().info("Target is online");
+    	   	   			        		
+    	   	   			        		String recWorld = op.getPlayer().getWorld().getName();
+    	   	   			        		// If the person is online and in the world that is the designated world or the same group, then just add to their balance
+    	   	   			        		if (recWorld.equals(targetWorld) || inWorldGroup(targetWorld,recWorld)) {
+    	   	   			        			// getLogger().info("Target is in target world or both worlds are in the same group");
+    	   	   			        			// Zero out their previous balance
+    	   	   			        			double pBalance = econ.getBalance(op.getName());
+    	   	   			        			econ.withdrawPlayer(op.getName(), pBalance);
+    	   	   			        			econ.depositPlayer(op.getName(), am);
+    	   	   			        		} else {
+    	   	   			        			// They are in a totally different world. Add it to the MWM database
+    	   	   			        			// getLogger().info("Target is not in the target world or group");
+    	   	   			        			// Set the amount to the named player
+    	   	   			        			mwmSet(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	} else {
+    	   	   			        		// Offline player - deposit the money in that world's account
+     	   	   			        		// getLogger().info("Target is offline");
+     	   	   			        		// If the player logged out in the world where the payment is being sent then credit the economy
+    	   	   			        		// Otherwise credit MWM account
+     	   	   			        		String offlineWorld = mwmReadOfflineWorld(op.getName());
+     	   	   			        		// If the player is offline and we do not know which world they were in when they logged off then we cannot accept payment
+     	   	   			        		if (offlineWorld == null) {
+     	   	   			        			sender.sendMessage(String.format(ChatColor.RED + "Sorry, you cannot set the balance for that offline player yet with MWM. They need to login at least one more time."));  	
+     	   	   			        			return true;
+     	   	   			        		}
+     	   	   			        		if (offlineWorld.equalsIgnoreCase(targetWorld)) {
+     	   	   			        			// getLogger().info("Target's offline is the same as the pay to world");
+     	   	   			        			double pBalance = econ.getBalance(op.getName());
+     	   	   			        			econ.withdrawPlayer(op.getName(), pBalance);
+    	   	   			        			econ.depositPlayer(op.getName(), am);
+    	   	   			        		} else {
+    	   	   			        			// getLogger().info("Target's offline is different to the pay to world");
+    	   	   			        			mwmSet(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	}
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "You set " + op.getName() + "'s balance to " + econ.format(am) + " in " + args[3]));
+    	   	   			        	return true;    			        		
+    			        		}
+    			        	} 
+    			        }else{
+    			        	sender.sendMessage(String.format(ChatColor.GOLD + op.getName() + " is not a recognised player"));
+    			        	return true;
+    			        }
+    				}
+    			// End Set command
+    			} else if (args[0].equalsIgnoreCase("take")) {
+    				// Take command
+    				// Check permission
+    				if (!sender.hasPermission("mwm.take")) {
+    					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+						return true;
+    				}
+    				// Check that the right number of arguments are provided
+    				if (args.length != 4) {
+    					sender.sendMessage(String.format(ChatColor.GOLD + "/mwm take <player> <amount> <world> - Takes amount from a player an amount from world"));
+    					return true;
+    				} else {
+     					// Check the other arguments one by one
+    					// Check if the player exists and can receive money
+    					OfflinePlayer op = Bukkit.getServer().getOfflinePlayer(args[1].toString());
+    					double am = Double.parseDouble(args[2]);
+    					String targetWorld = args[3].toLowerCase();
+    			        if (op.hasPlayedBefore()){
+    			            // We know this player, so check if the amount is a value
+    			        	if (am < 0.0) {
+    	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "Amounts should be positive."));
+        			        	return true;    			        		
+    			        	} else {
+    			        		// Check the world is valid
+    			        		if (Bukkit.getWorld(targetWorld) == null) {
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + targetWorld + " is an unknown world."));
+            			        	return true;    			        		   			        			
+    			        		} else {
+    	   	   			        	// Find out if the player is offline or online
+    	   	   			        	if (op.isOnline()) {
+    	   	   			        		// getLogger().info("Target is online");
+    	   	   			        		
+    	   	   			        		String recWorld = op.getPlayer().getWorld().getName();
+    	   	   			        		// If the person is online and in the world that is the designated world or the same group, then just add to their balance
+    	   	   			        		if (recWorld.equals(targetWorld) || inWorldGroup(targetWorld,recWorld)) {
+    	   	   			        			// getLogger().info("Target is in target world or both worlds are in the same group");
+    	   	   			        			econ.withdrawPlayer(op.getPlayer().getName(), am);
+    	       	   	   			        } else {
+    	   	   			        			// They are in a totally different world. Take it from the MWM database
+    	   	   			        			// getLogger().info("Target is not in the target world or group");
+    	   	   			        			// Withdraw the amount to the named player
+    	   	   			        			mwmWithdraw(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	} else {
+    	   	   			        		// Offline player - withdraw the money in that world's account
+     	   	   			        		// getLogger().info("Target is offline");
+     	   	   			        		// If the player logged out in the world where the payment is being sent then debit the economy
+    	   	   			        		// Otherwise credit MWM account
+     	   	   			        		String offlineWorld = mwmReadOfflineWorld(op.getName());
+     	   	   			        		// If the player is offline and we do not know which world they were in when they logged off then we cannot accept payment
+     	   	   			        		if (offlineWorld == null) {
+     	   	   			        			sender.sendMessage(String.format(ChatColor.RED + "Sorry, you cannot debit that offline player yet. They need to login at least one more time."));  	
+     	   	   			        			return true;
+     	   	   			        		}
+     	   	   			        		if (offlineWorld.equalsIgnoreCase(targetWorld)) {
+     	   	   			        			// getLogger().info("Target's offline is the same as the pay to world");
+    	   	   			        			econ.withdrawPlayer(op.getName(), am);
+    	   	   			        		} else {
+    	   	   			        			// getLogger().info("Target's offline is different to the pay to world");
+    	   	   			        			mwmWithdraw(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	}
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "You took " + econ.format(am) + " from " + op.getName() + " in " + args[3]));
+    	   	   			        	return true;    			        		
+    			        		}
+    			        	} 
+    			        }else{
+    			        	sender.sendMessage(String.format(ChatColor.GOLD + op.getName() + " is not a recognised player"));
+    			        	return true;
+    			        }
+    				}
+    			// End Take command
+    			} else if (args[0].equalsIgnoreCase("give")) {
+    				// Give command
+    				// Check permission
+    				if (!sender.hasPermission("mwm.give")) {
+    					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+						return true;
+    				}
+    				// Check that the right number of arguments are provided
+    				if (args.length != 4) {
+    					sender.sendMessage(String.format(ChatColor.GOLD + "/mwm give <player> <amount> <world> - Gives a player an amount in a specific world"));
+    					return true;
+    				} else {
+     					// Check the other arguments one by one
+    					// Check if the player exists and can receive money
+    					OfflinePlayer op = Bukkit.getServer().getOfflinePlayer(args[1].toString());
+    					double am = Double.parseDouble(args[2]);
+    					String targetWorld = args[3].toLowerCase();
+    			        if (op.hasPlayedBefore()){
+    			            // We know this player, so check if the amount is a value
+    			        	if (am < 0.0) {
+    	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "Amounts should be positive."));
+        			        	return true;    			        		
+    			        	} else {
+    			        		// Check the world is valid
+    			        		if (Bukkit.getWorld(targetWorld) == null) {
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + targetWorld + " is an unknown world."));
+            			        	return true;    			        		   			        			
+    			        		} else {
+    	   	   			        	// Find out if the player is offline or online
+    	   	   			        	if (op.isOnline()) {
+    	   	   			        		// getLogger().info("Target is online");
+    	   	   			        		
+    	   	   			        		String recWorld = op.getPlayer().getWorld().getName();
+    	   	   			        		// If the person is online and in the world that is the designated world or the same group, then just add to their balance
+    	   	   			        		if (recWorld.equals(targetWorld) || inWorldGroup(targetWorld,recWorld)) {
+    	   	   			        			// getLogger().info("Target is in target world or both worlds are in the same group");
+    	   	   			        			econ.depositPlayer(op.getPlayer().getName(), am);
+    	   	   			        		} else {
+    	   	   			        			// They are in a totally different world. Add it to the MWM database
+    	   	   			        			// getLogger().info("Target is not in the target world or group");
+    	   	   			        			// Deposit the amount to the named player
+    	   	   			        			mwmDeposit(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	} else {
+    	   	   			        		// Offline player - deposit the money in that world's account
+     	   	   			        		// getLogger().info("Target is offline");
+     	   	   			        		// If the player logged out in the world where the payment is being sent then credit the economy
+    	   	   			        		// Otherwise credit MWM account
+     	   	   			        		String offlineWorld = mwmReadOfflineWorld(op.getName());
+     	   	   			        		// If the player is offline and we do not know which world they were in when they logged off then we cannot accept payment
+     	   	   			        		if (offlineWorld == null) {
+     	   	   			        			sender.sendMessage(String.format(ChatColor.RED + "Sorry, you cannot pay that offline player yet. They need to login at least one more time."));  	
+     	   	   			        			return true;
+     	   	   			        		}
+     	   	   			        		if (offlineWorld.equalsIgnoreCase(targetWorld)) {
+     	   	   			        			// getLogger().info("Target's offline is the same as the pay to world");
+    	   	   			        			econ.depositPlayer(op.getName(), am);
+    	   	   			        		} else {
+    	   	   			        			// getLogger().info("Target's offline is different to the pay to world");
+    	   	   			        			mwmDeposit(op.getName(),am,targetWorld);
+    	   	   			        		}
+    	   	   			        	}
+    	   	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "You gave " + econ.format(am) + " to " + op.getName() + " in " + args[3]));
+    	   	   			        	return true;    			        		
+    			        		}
+    			        	} 
+    			        }else{
+    			        	sender.sendMessage(String.format(ChatColor.GOLD + op.getName() + " is not a recognised player"));
+    			        	return true;
+    			        }
+    				}
+    			// End Give command
     			} else if (args[0].equalsIgnoreCase("pay")) {
     				// Pay command
    					// Check that this command is being issued by a player on the server and not command line
@@ -569,7 +799,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     					String targetWorld = args[3].toLowerCase();
     			        if (op.hasPlayedBefore()){
     			            // We know this player, so check if the amount is a value
-    			        	if (am <= 0.0) {
+    			        	if (am < 0.0) {
     	   			        	sender.sendMessage(String.format(ChatColor.GOLD + "Amounts should be positive."));
         			        	return true;    			        		
     			        	} else {
@@ -623,12 +853,13 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	   	   			        	econ.withdrawPlayer(sender.getName(), am);
     	   	   			        	return true;    			        		
     			        		}
-    			        	}
+    			        	} 
     			        }else{
     			        	sender.sendMessage(String.format(ChatColor.GOLD + op.getName() + " is not a recognised player"));
     			        	return true;
     			        }
     				}
+    			// End Pay command
     			} else {
     				return false;
     			}
@@ -724,8 +955,10 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	    			// Multiverse does not know about this world, so don't show the alias
     	    		}
     	    		// Only show positive balances
-    	    		if (worldBalance>0.0) {
-    	    			sender.sendMessage(String.format(s + " " + ChatColor.GOLD + econ.format(worldBalance)));
+    	    		if (worldBalance > 0.0) {
+    	    			sender.sendMessage(String.format(s + " " + ChatColor.GREEN + econ.format(worldBalance)));
+    	    		} else if (worldBalance < 0.0) {
+       	    			sender.sendMessage(String.format(s + " " + ChatColor.RED + econ.format(worldBalance)));
     	    		}
     	    	}
     	    	sender.sendMessage(String.format(ChatColor.GOLD + "Total across all worlds is " + econ.format(networth)));

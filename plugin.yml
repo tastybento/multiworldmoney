@@ -25,4 +25,13 @@ permissions:
    mwm.pay:
       description: Allows use of the mwm pay command across worlds
       default: op
-      
+   mwm.set:
+      description: Allows use of the mwm set command across worlds
+      default: op
+   mwm.give:
+      description: Allows use of the mwm give command across worlds
+      default: op
+   mwm.take:
+      description: Allows use of the mwm take command across worlds
+      default: op
+
