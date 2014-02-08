@@ -1,6 +1,6 @@
 name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
-version: 1.7.4
+version: 1.7.4a
 depend: [Vault]
 softdepend: [Multiverse-Core]
 commands:
@@ -16,6 +16,9 @@ permissions:
    mwm.balance:
       description: Gives access to the balance command
       default: true
+   mwm.playerbalance:
+      description: Enables checking of other player’s balances
+      default: op
    mwm.reload:
       description: Reloads the groups.yml file
       default: op

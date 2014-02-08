@@ -523,6 +523,9 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     			sender.sendMessage(String.format(ChatColor.GOLD + "MultiWorldMoney commands:\n/balance - shows balance across all worlds"));
     			
     			// Check if the player has permission
+       			if (sender.hasPermission("mwm.playerbalance")) {
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm balance <name> - Shows balance of player with name <name>"));
+    			}
     			if (sender.hasPermission("mwm.reload")) {
     				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm reload - Reloads the groups.yml file"));
     			}
@@ -633,18 +636,59 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	}
     	// Balance command
     	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /balance then do the following...
-    		// Find out who sent the command
-    		String requestedPlayer = sender.getName();
-    		// Find out where I am
-    		String playerWorld = sender.getServer().getPlayer(requestedPlayer).getWorld().getName();
-    		//getLogger().info("Default player =" + requestedPlayer + " in " + playerWorld);
-    		// Check if there is a player name associated with the command
-    		/*
-    		 * if (args[0] != "") {
-    		
-    			requestedPlayer = args[0];
-    		}*/
-    		//getLogger().info();
+    		// This flag determines if the balance report is for an offline or online player
+    		Boolean offline = false;
+			// Check if this command is being issued by a player on the server and not command line
+			if (!(sender instanceof Player)) {
+				// Run on the console, so must include a player's name
+				// Check number of args
+				if (args.length != 1) {
+					sender.sendMessage("Syntax: balance <player name>");
+					return true;
+				}
+			}
+			// Check permissions
+			if (!sender.hasPermission("mwm.balance")) {
+				sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+				return true;
+			}
+			// Check that the right number of arguments are provided
+			String requestedPlayer = "";
+			if (args.length == 0) {
+				// Just the balance command
+				requestedPlayer = sender.getName();
+			} else {
+				// Check admin permissions
+				if (!sender.hasPermission("mwm.playerbalance")) {
+					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
+					return true;
+				}
+				// Check if the player exists 
+				OfflinePlayer op = Bukkit.getServer().getOfflinePlayer(args[0].toString());
+		        if (op.hasPlayedBefore()){
+		        	requestedPlayer = args[0];
+		        	if (!op.isOnline()) {
+		        		offline = true;
+		        	}
+		        } else {
+		        	sender.sendMessage(String.format(ChatColor.RED + "[MWM] Unknown player."));
+					return true;
+		        }
+			}
+    		// Find out where the player is
+			String playerWorld = "";
+			if (offline) {
+				// Player is offline. Function returns null if there is no known MWM balance. In that case just return their economy balance
+				playerWorld = mwmReadOfflineWorld(requestedPlayer);
+				if (playerWorld == null) {
+					// Return just the current balance
+					sender.sendMessage(String.format(ChatColor.GOLD + "[MWM] " + econ.format(econ.getBalance(requestedPlayer))));
+					return true;
+				}
+			} else {
+				// Player is online
+				playerWorld = sender.getServer().getPlayer(requestedPlayer).getWorld().getName();
+			}
     		// Look up details on that player
     		playerFile = new File(getDataFolder() + "/userdata", requestedPlayer + ".yml");
     		if (playerFile.exists()) {
