@@ -282,8 +282,16 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    		//getLogger().info("Player's balance point 5 is "+econ.getBalance(player.getName()));
 			} 
  	    }
-		// Tell the user
-		player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(econ.getBalance(player.getName()))));
+		// Grab the message from the config file
+		String newWorldMessage = config.getString("newworldmessage");
+		if (newWorldMessage == null) {
+			// Do not show any message
+		} else try {
+			player.sendMessage(String.format(ChatColor.GOLD + newWorldMessage, econ.format(econ.getBalance(player.getName()))));
+		} catch (Exception e) {
+			getLogger().info("Error: New world message in config.yml is malformed. Use text and one %s for the balance only.\nExample: Your balance in this world is %s");
+			player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(econ.getBalance(player.getName()))));
+		}
 		// Write the balance to this world
 		players.set(player.getWorld().getName() + ".money", econ.getBalance(player.getName()));
 		// Save the player file just in case there is a server problem
@@ -527,7 +535,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     				sender.sendMessage(String.format(ChatColor.GOLD + "/balance <name> - Shows balance of player with name <name>"));
     			}
     			if (sender.hasPermission("mwm.reload")) {
-    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm reload - Reloads the groups.yml file"));
+    				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm reload - Reloads the groups.yml and config.yml files"));
     			}
     			if (sender.hasPermission("mwm.pay")) {
     				sender.sendMessage(String.format(ChatColor.GOLD + "/mwm pay <player> <amount> <world> - Pays a player an amount from your balance to a specific world"));
@@ -549,9 +557,9 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     				if (!sender.hasPermission("mwm.reload")) {
     					sender.sendMessage(String.format(ChatColor.RED + "You do not have permission to use that command."));
     				} else {
-	    				// Reload groups
-	    				loadGroups();
-	  			        sender.sendMessage(String.format(ChatColor.GOLD + "MultiWorldMoney groups reloaded"));
+	    				// Reload config and groups files
+	    				loadYamls();
+	  			        sender.sendMessage(String.format(ChatColor.GOLD + "MultiWorldMoney reloaded"));
     				}
     				return true;
     			} else if (args[0].equalsIgnoreCase("set")) {
