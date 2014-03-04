@@ -161,13 +161,14 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	Player player = event.getPlayer();
     	String playerWorld = player.getWorld().getName();
     	String playerName = player.getName();
-    	// getLogger().info(playerName + " logged in to " + playerWorld + " and they have " + econ.getBalance(playerName));
+    	getLogger().info(playerName + " logged in to " + playerWorld + " and they have " + econ.getBalance(playerName));
     	// Go through each world and if they are in the same group, grab that world's balance and add it to the player's current balance
     	for (String world: worldgroups.keySet()) {
-    		// getLogger().info("Loop value = " + world);
+    		getLogger().info("Loop value = " + world);
     		if (inWorldGroup(world, playerWorld) && !world.equals(playerWorld)) {
     			// Remove any money from the world in the group
     			econ.depositPlayer(playerName, mwmBalance(playerName,world));
+    			getLogger().info("deposited " + mwmBalance(playerName,world) + " for " + playerName + " from " + world);
     			mwmSet(playerName,0.0,world);
     		}
     	}
@@ -956,12 +957,19 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     	    		// Display balance in each world
     	    		// The line below can be used to grab all world names
     	    		// Collection<MultiverseWorld> wmList = core.getMVWorldManager().getMVWorlds();
-    	    		try {
-    	    			String newName = core.getMVWorldManager().getMVWorld(s).getAlias();
-    	    			s = newName;
-    	    		} catch (Exception e) {
-    	    			// Multiverse does not know about this world, so don't show the alias
-    	    		}
+    	    		// DEBUG
+    	    		// TODO
+    	    		
+    	    		if (core != null) {
+    	    			try {
+    	    				String newName = core.getMVWorldManager().getMVWorld(s).getAlias();
+    	    				s = newName;
+    	    			} catch (Exception e)
+    	    			{
+    	    				// do nothing if it does work except log it
+    	    				getLogger().info("Warning: Could not get name of world from Multiverse-Core for " + s);
+    	    			}
+    	    		} 
     	    		// Only show positive balances
     	    		if (worldBalance > 0.0) {
     	    			sender.sendMessage(String.format(s + " " + ChatColor.GREEN + econ.format(worldBalance)));
