@@ -194,7 +194,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		Double oldBalance = econ.getBalance(player.getName());
 		Double newBalance = 0.0; // Always zero to start - in future change to a config value
 		//player.sendMessage(ChatColor.GOLD + "You changed world!!");
-		player.sendMessage(String.format("Your old world balance was %s", econ.format(oldBalance)));
+		logIt("Your old world balance was " + econ.format(oldBalance));
 		// Create a new player file if one does not exist
 		playerFile = new File(getDataFolder() + "/userdata", player.getName() + ".yml");
 		if (playerFile.exists()) {
