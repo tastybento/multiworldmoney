@@ -1,4 +1,6 @@
 # Config file
 newworldmessage:
       Your balance in this world is %s.
+# If you have denied loans in the economy, then this should also be false 
+allowLoans: false
 
