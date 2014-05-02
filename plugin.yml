@@ -1,6 +1,6 @@
 name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
-version: 1.7.9.a
+version: 1.7.9a
 depend: [Vault]
 softdepend: [Multiverse-Core]
 commands:
