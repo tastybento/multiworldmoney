@@ -3,4 +3,6 @@ newworldmessage:
       Your balance in this world is %s.
 # If you have denied loans in the economy, then this should also be false 
 allowLoans: false
+# UUID conversion required (remove this when it is done or set to false)
+uuidconvert: true
 

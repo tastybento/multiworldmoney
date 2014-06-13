@@ -1,8 +1,9 @@
 name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
-version: 1.7.9a
+version: 1.7.9b
 depend: [Vault]
 softdepend: [Multiverse-Core]
+softdepend: [Essentials]
 commands:
    balance:
       description: This tells you how much money you have across all worlds.
