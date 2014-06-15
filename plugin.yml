@@ -1,21 +1,27 @@
 name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
-version: 1.7.9b
+version: 1.7.9c
 depend: [Vault]
 softdepend: [Multiverse-Core]
-softdepend: [Essentials]
 commands:
    balance:
       description: This tells you how much money you have across all worlds.
       usage: /<command> [player]
       permission: mwm.balance
       permission-message: You don't have <permission>
+   pay:
+      description: Pays another player from your balance in this world to their balance in this world
+      usage: /<command> [player] [amount]
+      permission: mwm.payplayer
    mwm:
       description: MultiWorldMoney command
       usage: /<command>
 permissions:
    mwm.balance:
       description: Gives access to the balance command
+      default: true
+   mwm.payplayer:
+      description: Allows players to pay each other in-world
       default: true
    mwm.playerbalance:
       description: Enables checking of other player’s balances
