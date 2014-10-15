@@ -206,6 +206,8 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     public void onLogout(PlayerQuitEvent event) {
 	Player player = event.getPlayer();
 	String playerName = player.getName();
+	// grab latest balance in the world they are in and store it
+	mwmSet(playerName,econ.getBalance(player),player.getWorld().getName());
 	mwmSaveOfflineWorld(player);
 	// Remove them from online player list
 	onlinePlayers.remove(playerName.toLowerCase());
@@ -334,14 +336,14 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     private void newWorldMessage(Player player) {
 	if (player != null) {
 	    // Grab the message from the config file
-	    String newWorldMessage = config.getString("newworldmessage");
-	    if (newWorldMessage == null) {
-		// Do not show any message
-	    } else try {
-		player.sendMessage(String.format(ChatColor.GOLD + newWorldMessage, econ.format(econ.getBalance(player))));
-	    } catch (Exception e) {
-		getLogger().severe("New world message in config.yml is malformed. Use text and one %s for the balance only.\nExample: Your balance in this world is %s");
-		player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(econ.getBalance(player))));
+	    String newWorldMessage = config.getString("newworldmessage","");
+	    if (!newWorldMessage.isEmpty()) {
+		try {
+		    player.sendMessage(String.format(ChatColor.GOLD + newWorldMessage, econ.format(econ.getBalance(player))));
+		} catch (Exception e) {
+		    getLogger().severe("New world message in config.yml is malformed. Use text and one %s for the balance only.\nExample: Your balance in this world is %s");
+		    player.sendMessage(String.format(ChatColor.GOLD + "Your balance in this world is %s", econ.format(econ.getBalance(player))));
+		}
 	    }
 	}
 
@@ -1130,7 +1132,9 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		// Check if player is online
 		if (onlinePlayers.containsKey(args[0].toLowerCase())) {
 		    logIt("Recipient is online");
-		    econ.depositPlayer(getServer().getPlayer(onlinePlayers.get(args[0].toLowerCase())), amount);
+		    Player payee = getServer().getPlayer(onlinePlayers.get(args[0].toLowerCase()));
+		    econ.depositPlayer(payee, amount);
+		    payee.sendMessage(((Player)sender).getDisplayName() + " paid you " + econ.format(amount) + ".");
 		} else {
 		    logIt("Recipient is offline");
 		    // Offline
@@ -1152,12 +1156,6 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		return true;
 	    }
 	}
-
-
-
-
-
-
 
 	// Balance command
 	if(cmd.getName().equalsIgnoreCase("balance")){ // If the player typed /balance then do the following...
