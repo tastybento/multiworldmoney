@@ -1091,7 +1091,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    // Check that the right number of arguments are provided
 	    if (args.length != 2) {
 		// Just the pay command
-		sender.sendMessage(String.format(ChatColor.GOLD + "/pay <player> <amount>"));
+		sender.sendMessage(String.format(ChatColor.GOLD + "[MWM] /pay <player> <amount>"));
 		return true;
 	    } else {
 		// Check if the player exists
@@ -1133,8 +1133,15 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		if (onlinePlayers.containsKey(args[0].toLowerCase())) {
 		    logIt("Recipient is online");
 		    Player payee = getServer().getPlayer(onlinePlayers.get(args[0].toLowerCase()));
-		    econ.depositPlayer(payee, amount);
-		    payee.sendMessage(((Player)sender).getDisplayName() + " paid you " + econ.format(amount) + ".");
+		    // Check if they are in the same world
+		    Player player = ((Player)sender);
+		    if (player.getWorld().equals(payee.getWorld())) {
+			econ.depositPlayer(payee, amount);
+		    } else {
+			// Different world, just make the payment via MWM
+			mwmDeposit(payee.getName(),amount,player.getWorld().getName());
+		    }	    
+		    payee.sendMessage(player.getDisplayName() + " paid you " + econ.format(amount) + " in " + getMVAlias(player.getWorld().getName()) + ".");
 		} else {
 		    logIt("Recipient is offline");
 		    // Offline
@@ -1145,14 +1152,14 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		    if (logOutWorld != null) {
 			if (logOutWorld.equalsIgnoreCase(((Player)sender).getWorld().getName())) {
 			    econ.depositPlayer(p, amount);
-			    sender.sendMessage(String.format(ChatColor.GOLD + "You paid " + args[0] +" " + econ.format(amount)));
+			    sender.sendMessage(String.format(ChatColor.GOLD + "You paid " + args[0] +" " + econ.format(amount)) + " in " + getMVAlias(((Player)sender).getWorld().getName()) + ".");
 			    return true;
 			}
 		    }
 		    // Just dump it in MWM
 		    mwmDeposit(args[0].toLowerCase(),amount,((Player)sender).getWorld().getName());    
 		}
-		sender.sendMessage(String.format(ChatColor.GOLD + "You paid " + args[0] +" " + econ.format(amount)));
+		sender.sendMessage(String.format(ChatColor.GOLD + "You paid " + args[0] +" " + econ.format(amount) + " in " + getMVAlias(((Player)sender).getWorld().getName()) + "."));
 		return true;
 	    }
 	}
@@ -1264,21 +1271,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 			} else {
 			    suffix = "";
 			}
-
-			// Display balance in each world
-			// The line below can be used to grab all world names
-			// Collection<MultiverseWorld> wmList = core.getMVWorldManager().getMVWorlds();
-			// Grab the Multiverse world name if it is available
-			if (core != null) {
-			    try {
-				String newName = core.getMVWorldManager().getMVWorld(s).getAlias();
-				s = newName;
-			    } catch (Exception e)
-			    {
-				// do nothing if it does not work
-				//logIt("Warning: Could not get name of world from Multiverse-Core for " + s);
-			    }
-			} 
+			s = getMVAlias(s);
 			// Show balances
 			if (worldBalance > 0D) {
 			    sender.sendMessage(String.format(s + " " + ChatColor.GREEN + econ.format(worldBalance)) + suffix);
@@ -1292,17 +1285,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 		//logIt("Player does not exists in MWM");
 		// The player has no MWM data so just show the current world's balance
 		worldBalance = roundDown(econ.getBalance(requestedPlayer),2);
-		// Find the MV alias of the world if it is available
-		if (core != null) {
-		    try {
-			String newName = core.getMVWorldManager().getMVWorld(playerWorld).getAlias();
-			playerWorld = newName;
-		    } catch (Exception e)
-		    {
-			// do nothing if it does not work
-		    }
-		}
-
+		playerWorld = getMVAlias(playerWorld);
 		if (worldBalance > 0D) {
 		    sender.sendMessage(String.format(playerWorld + " " + ChatColor.GREEN + econ.format(worldBalance) + ChatColor.GOLD + " (Current world)"));
 		} else if (worldBalance <= 0D) {
@@ -1316,6 +1299,20 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	return false; 
     }
 
+    private String getMVAlias(String worldName) {
+	// Grab the Multiverse world name if it is available
+	if (core != null) {
+	    try {
+		String newName = core.getMVWorldManager().getMVWorld(worldName).getAlias();
+		worldName = newName;
+	    } catch (Exception e)
+	    {
+		// do nothing if it does not work
+		//logIt("Warning: Could not get name of world from Multiverse-Core for " + s);
+	    }	    
+	} 
+	return worldName;
+    }
     private UUID getUUID(String playerName) {
 	if (!playerExists(playerName)) {
 	    return null;
