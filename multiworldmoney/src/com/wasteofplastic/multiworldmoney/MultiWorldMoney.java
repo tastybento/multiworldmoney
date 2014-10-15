@@ -1091,7 +1091,7 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
 	    // Check that the right number of arguments are provided
 	    if (args.length != 2) {
 		// Just the pay command
-		sender.sendMessage(String.format(ChatColor.GOLD + "[MWM] /pay <player> <amount>"));
+		sender.sendMessage(String.format(ChatColor.GOLD + "/pay <player> <amount>"));
 		return true;
 	    } else {
 		// Check if the player exists
