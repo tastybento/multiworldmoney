@@ -206,6 +206,8 @@ public class MultiWorldMoney extends JavaPlugin implements Listener {
     public void onLogout(PlayerQuitEvent event) {
 	Player player = event.getPlayer();
 	String playerName = player.getName();
+	// grab latest balance in the world they are in and store it
+	mwmSet(playerName,econ.getBalance(player),player.getWorld().getName());
 	mwmSaveOfflineWorld(player);
 	// Remove them from online player list
 	onlinePlayers.remove(playerName.toLowerCase());
