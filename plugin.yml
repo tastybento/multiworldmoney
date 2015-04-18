@@ -1,21 +1,22 @@
 name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
-version: 1.8
+version: ${version}
 depend: [Vault]
 softdepend: [Multiverse-Core]
 commands:
+   pay:
+      description: Pays another player from your balance in this world to their balance in this world
+      usage: /<command> [player] [amount]
+      permission: mwm.payplayer
+      permission-message: You don't have <permission>
    balance:
       description: This tells you how much money you have across all worlds.
       usage: /<command> [player]
       permission: mwm.balance
       permission-message: You don't have <permission>
-   pay:
-      description: Pays another player from your balance in this world to their balance in this world
-      usage: /<command> [player] [amount]
-      permission: mwm.payplayer
    mwm:
-      description: MultiWorldMoney command
-      usage: /<command>
+      description: Admin command
+      usage: /<command> to see help
 permissions:
    mwm.balance:
       description: Gives access to the balance command
@@ -26,19 +27,6 @@ permissions:
    mwm.playerbalance:
       description: Enables checking of other player’s balances
       default: op
-   mwm.reload:
-      description: Reloads the groups.yml file
+   mwm.admin:
+      description: Access to admin commands
       default: op
-   mwm.pay:
-      description: Allows use of the mwm pay command across worlds
-      default: op
-   mwm.set:
-      description: Allows use of the mwm set command across worlds
-      default: op
-   mwm.give:
-      description: Allows use of the mwm give command across worlds
-      default: op
-   mwm.take:
-      description: Allows use of the mwm take command across worlds
-      default: op
-
