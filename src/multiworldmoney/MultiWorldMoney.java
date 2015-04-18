@@ -137,6 +137,13 @@ public class MultiWorldMoney extends JavaPlugin {
 	getCommand("pay").setExecutor(new PayCommand(this));
 	getCommand("balance").setExecutor(new BalanceCommand(this));
 	getCommand("mwm").setExecutor(new AdminCommands(this));
+
+	// Metrics
+	try {
+	    final Metrics metrics = new Metrics(this);
+	    metrics.start();
+	} catch (final IOException localIOException) {
+	}
     }
 
 
