@@ -61,39 +61,43 @@ public class MultiWorldMoney extends JavaPlugin {
 			player.load(playerFile);
 			// Extract the data
 			String uuidString = player.getString("playerinfo.uuid");
-			UUID uuid = UUID.fromString(uuidString);
-			File convert = new File(playersFolder,uuid.toString() + ".yml");
-			if (convert.exists()) {
-			    getLogger().severe(uuid.toString() + ".yml exists already! Skipping import..."); 
-			} else {
-			    YamlConfiguration newPlayer = new YamlConfiguration();
-			    String name = player.getString("playerinfo.name");
-			    newPlayer.set("name", name);
-			    newPlayer.set("uuid", uuidString);
-			    newPlayer.set("logoffworld", player.getString("offline_world.name"));
-			    // Get the balances
-			    for (String key : player.getKeys(false)) {
-				if (!key.equalsIgnoreCase("offline_world") && !key.equalsIgnoreCase("playerinfo")) {
-				    World world = getServer().getWorld(key);
-				    if (world == null && core != null) {
-					MultiverseWorld mvWorld = core.getMVWorldManager().getMVWorld(key);
-					if (mvWorld != null) {
-					    world = mvWorld.getCBWorld();
+			if (uuidString != null) { 
+			    UUID uuid = UUID.fromString(uuidString);
+			    File convert = new File(playersFolder,uuid.toString() + ".yml");
+			    if (convert.exists()) {
+				getLogger().severe(uuid.toString() + ".yml exists already! Skipping import..."); 
+			    } else {
+				YamlConfiguration newPlayer = new YamlConfiguration();
+				String name = player.getString("playerinfo.name");
+				newPlayer.set("name", name);
+				newPlayer.set("uuid", uuidString);
+				newPlayer.set("logoffworld", player.getString("offline_world.name"));
+				// Get the balances
+				for (String key : player.getKeys(false)) {
+				    if (!key.equalsIgnoreCase("offline_world") && !key.equalsIgnoreCase("playerinfo")) {
+					World world = getServer().getWorld(key);
+					if (world == null && core != null) {
+					    MultiverseWorld mvWorld = core.getMVWorldManager().getMVWorld(key);
+					    if (mvWorld != null) {
+						world = mvWorld.getCBWorld();
+					    }
+					}
+					if (world != null) {
+					    // It's a recognized world
+					    newPlayer.set("balances." + world.getName(), roundDown(player.getDouble(key + ".money",0D), 2));
+					} else {
+					    getLogger().severe("Could not recognize world: " + key + ". Skipping...");
 					}
 				    }
-				    if (world != null) {
-					// It's a recognized world
-					newPlayer.set("balances." + world.getName(), roundDown(player.getDouble(key + ".money",0D), 2));
-				    } else {
-					getLogger().severe("Could not recognize world: " + key + ". Skipping...");
-				    }
 				}
+				newPlayer.save(convert);
+				if (name != null && uuid != null) {
+				    players.addName(name, uuid);
+				}
+				getLogger().info("Converted " + name);
 			    }
-			    newPlayer.save(convert);
-			    if (name != null && uuid != null) {
-				players.addName(name, uuid);
-			    }
-			    getLogger().info("Converted " + name);
+			} else {
+			    getLogger().severe("Could not import " + playerFile.getName() + " - no known UUID. Skipping...");
 			}
 		    } catch (Exception e) {
 			getLogger().severe("Could not import " + playerFile.getName() + ". Skipping...");
@@ -101,6 +105,8 @@ public class MultiWorldMoney extends JavaPlugin {
 		    }
 		}
 	    }
+	    // Save names (just in case)
+	    players.savePlayerNames();
 	    // Rename the folder
 	    File newName = new File(getDataFolder(),"userdata.old");
 	    userDataFolder.renameTo(newName);
