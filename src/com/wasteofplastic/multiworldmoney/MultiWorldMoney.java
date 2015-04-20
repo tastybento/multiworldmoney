@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.World;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;

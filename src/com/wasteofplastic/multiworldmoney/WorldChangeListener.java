@@ -2,10 +2,10 @@ package com.wasteofplastic.multiworldmoney;
 
 import java.util.List;
 
-import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 import org.bukkit.World;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
