@@ -39,6 +39,7 @@ public class AdminCommands implements CommandExecutor {
 	    if (args[0].equalsIgnoreCase("reload")) {
 		sender.sendMessage(ChatColor.GREEN + "Reloaded configuration.");
 		plugin.loadConfig();
+		plugin.loadGroups();
 		return true;
 	    } else {
 		printHelp(sender);
