@@ -21,7 +21,7 @@ permissions:
    mwm.balance:
       description: Gives access to the balance command
       default: true
-   mwm.payplayer:
+   mwm.pay:
       description: Allows players to pay each other in-world
       default: true
    mwm.playerbalance:
