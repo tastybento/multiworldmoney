@@ -7,7 +7,7 @@ commands:
    pay:
       description: Pays another player from your balance in this world to their balance in this world
       usage: /<command> [player] [amount]
-      permission: mwm.payplayer
+      permission: mwm.pay
       permission-message: You don't have <permission>
    balance:
       description: This tells you how much money you have across all worlds.

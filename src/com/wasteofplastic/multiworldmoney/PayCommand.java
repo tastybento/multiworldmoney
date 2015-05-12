@@ -39,7 +39,12 @@ public class PayCommand implements CommandExecutor {
 	    // correctly formed pay command /pay name amount
 	    // Check name
 	    UUID targetUUID = plugin.getPlayers().getUUID(args[0]);
+	    
 	    if (targetUUID != null) {
+		if (targetUUID.equals(player.getUniqueId())) {
+			player.sendMessage(ChatColor.RED + "Error: " + ChatColor.DARK_RED + "You cannot pay yourself.");
+			return true;
+		    }
 		double amount = 0;
 		// Check that the amount is a number
 		try {
@@ -107,9 +112,13 @@ public class PayCommand implements CommandExecutor {
 
     private void pay(Player target, Player player, double amount) {
 	EconomyResponse erw = VaultHelper.econ.withdrawPlayer(player, amount);
-	EconomyResponse erd = VaultHelper.econ.depositPlayer(target, amount);
-	player.sendMessage(ChatColor.GREEN + VaultHelper.econ.format(amount) + " has been sent to " + target.getName() + " in world " + player.getWorld().getName());
-	target.sendMessage(ChatColor.GREEN + VaultHelper.econ.format(amount) + " has been received from " + player.getName() + " in world " + player.getWorld().getName());
-
+	if (erw.transactionSuccess()) {
+	    VaultHelper.econ.depositPlayer(target, amount);
+	    player.sendMessage(ChatColor.GREEN + VaultHelper.econ.format(amount) + " has been sent to " + target.getName() + " in world " + player.getWorld().getName());
+	    target.sendMessage(ChatColor.GREEN + VaultHelper.econ.format(amount) + " has been received from " + player.getName() + " in world " + player.getWorld().getName());
+	} else {
+	    // Cannot pay - let pay handle the error
+	    player.sendMessage(ChatColor.RED + "Error: " + ChatColor.DARK_RED + "You do not have sufficient funds.");
+	}
     }
 }
