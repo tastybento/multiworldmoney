@@ -129,22 +129,8 @@ public class AdminCommands implements CommandExecutor {
 		    sender.sendMessage(ChatColor.RED + "Error: " + ChatColor.DARK_RED + "Amount must be positive.");
 		    return true;
 		}
-		// Check to see if loans are allowed
-		// Check to see if this will result in a negative balance
-		if (amount > plugin.getPlayers().getBalance(target, world)) {
-		    // It will - see if loans are allowed
-		    double balance = VaultHelper.econ.getBalance(target) + amount - plugin.getPlayers().getBalance(target, world);
-		    // Try to withdraw an amount and see what happens
-		    EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, balance);
-		    if (er.transactionSuccess()) {
-			// Put it back
-			VaultHelper.econ.depositPlayer(target, balance);
-		    } else {
-			sender.sendMessage(ChatColor.RED + "Error: " + ChatColor.DARK_RED + er.errorMessage);
-			return true;
-		    }	
-		}
 		if (groupWorlds.contains(target.getWorld())) {
+		    // Same group - let the economy handle any loan issues
 		    EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, amount);
 		    if (!er.transactionSuccess()) {
 			// Cannot set
@@ -152,6 +138,22 @@ public class AdminCommands implements CommandExecutor {
 			return true;
 		    }
 		} else { 
+		    // Not in the same group
+		    // Check to see if loans are allowed
+		    // Check to see if this will result in a negative balance
+		    if (amount > plugin.getPlayers().getBalance(target, world)) {
+			// It will - see if loans are allowed
+			double balance = VaultHelper.econ.getBalance(target) + amount - plugin.getPlayers().getBalance(target, world);
+			// Try to withdraw an amount and see what happens
+			EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, balance);
+			if (er.transactionSuccess()) {
+			    // Put it back
+			    VaultHelper.econ.depositPlayer(target, balance);
+			} else {
+			    sender.sendMessage(ChatColor.RED + "Error: " + ChatColor.DARK_RED + er.errorMessage);
+			    return true;
+			}	
+		    }
 		    plugin.getPlayers().withdraw(target, world, amount);
 		}
 		sender.sendMessage(ChatColor.GREEN + "Withdrew " + VaultHelper.econ.format(amount) 
