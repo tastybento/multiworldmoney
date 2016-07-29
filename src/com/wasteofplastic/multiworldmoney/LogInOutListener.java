@@ -8,31 +8,31 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class LogInOutListener implements Listener {
-    
+
     private MultiWorldMoney plugin;
-    
+
     /**
      * @param plugin
      */
     public LogInOutListener(MultiWorldMoney plugin) {
-	this.plugin = plugin;
+        this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(final PlayerJoinEvent event) {
-	Player player = event.getPlayer();
-	// Add player to the cache
-	plugin.getPlayers().addPlayer(player);
-	// Set the balance for this player in whatever world they are in because it may have changed while
-	// they were offline
-	double balance = VaultHelper.econ.getBalance(player);
-	plugin.getPlayers().setBalance(player, player.getWorld(), balance);
+        Player player = event.getPlayer();
+        // Add player to the cache
+        plugin.getPlayers().addPlayer(player);
+        // Set the balance for this player in whatever world they are in because it may have changed while
+        // they were offline
+        double balance = VaultHelper.econ.getBalance(player);
+        plugin.getPlayers().setBalance(player, player.getWorld(), balance);
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(final PlayerQuitEvent event) {
-	// Remove player
-	plugin.getPlayers().removePlayer(event.getPlayer());
+        // Remove player
+        plugin.getPlayers().removePlayer(event.getPlayer());
     }
 
 }

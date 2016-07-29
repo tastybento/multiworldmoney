@@ -2,7 +2,7 @@ name: MultiWorldMoney
 main: com.wasteofplastic.multiworldmoney.MultiWorldMoney
 version: ${version}
 depend: [Vault]
-softdepend: [Multiverse-Core]
+softdepend: [Multiverse-Core, Essentials]
 commands:
    pay:
       description: Pays another player from your balance in this world to their balance in this world
