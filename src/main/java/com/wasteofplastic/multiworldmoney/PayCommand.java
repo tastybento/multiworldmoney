@@ -125,7 +125,7 @@ public class PayCommand implements CommandExecutor {
                     .replace("[amount]", VaultHelper.econ.format(amount)))
                     .replace("[world]", player.getWorld().getName()));
             target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
-                    .replace("[name]", target.getName())
+                    .replace("[name]", player.getName())
                     .replace("[amount]", VaultHelper.econ.format(amount)))
                     .replace("[world]", player.getWorld().getName()));
         } else {
