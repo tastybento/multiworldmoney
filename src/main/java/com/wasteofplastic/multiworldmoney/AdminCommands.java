@@ -121,10 +121,14 @@ public class AdminCommands implements CommandExecutor {
                     plugin.getPlayers().setBalance(target, world, amount);
                 }
                 if (!sender.equals(target)) {
-                    sender.sendMessage(ChatColor.GREEN + ((Lang.setBalanceTo.replace("[name]", target.getName())).replace("[amount]",
-                            VaultHelper.econ.format(amount))).replace("[world]", plugin.getWorldName(world)));
+                    sender.sendMessage(ChatColor.GREEN + ((Lang.setBalanceTo
+                            .replace("[name]", target.getName()))
+                            .replace("[amount]", VaultHelper.econ.format(amount)))
+                            .replace("[world]", plugin.getWorldName(world)));
                 }
-                target.sendMessage(ChatColor.GREEN + (Lang.yourBalanceSetTo.replace("[amount]",VaultHelper.econ.format(amount))).replace("[world]", plugin.getWorldName(world)));
+                target.sendMessage(ChatColor.GREEN + (Lang.yourBalanceSetTo
+                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                        .replace("[world]", plugin.getWorldName(world)));
                 return true;	
             } else if (args[0].equalsIgnoreCase("take")) {
                 if (amount < 0D) {
@@ -159,10 +163,14 @@ public class AdminCommands implements CommandExecutor {
                     plugin.getPlayers().withdraw(target, world, amount);
                 }
                 if (!sender.equals(target)) {
-                    sender.sendMessage(ChatColor.GREEN + ((Lang.withdrew.replace("[name]", target.getName())).replace("[amount]",
-                            VaultHelper.econ.format(amount))).replace("[world]", plugin.getWorldName(world)));
+                    sender.sendMessage(ChatColor.GREEN + ((Lang.withdrew
+                            .replace("[name]", target.getName()))
+                            .replace("[amount]", VaultHelper.econ.format(amount)))
+                            .replace("[world]", plugin.getWorldName(world)));
                 }
-                target.sendMessage(ChatColor.GREEN + (Lang.reduceBalance.replace("[amount]",VaultHelper.econ.format(amount))).replace("[world]", plugin.getWorldName(world)));
+                target.sendMessage(ChatColor.GREEN + (Lang.reduceBalance
+                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                        .replace("[world]", plugin.getWorldName(world)));
                 return true;
             } else if (args[0].equalsIgnoreCase("give")) {
                 if (amount < 0D) {
@@ -181,10 +189,14 @@ public class AdminCommands implements CommandExecutor {
                     plugin.getPlayers().deposit(target, world, amount);
                 }
                 if (!sender.equals(target)) {
-                    sender.sendMessage(ChatColor.GREEN + ((Lang.deposited.replace("[name]", target.getName())).replace("[amount]",
-                            VaultHelper.econ.format(amount))).replace("[world]", plugin.getWorldName(world)));
+                    sender.sendMessage(ChatColor.GREEN + ((Lang.deposited
+                            .replace("[name]", target.getName()))
+                            .replace("[amount]", VaultHelper.econ.format(amount)))
+                            .replace("[world]", plugin.getWorldName(world)));
                 }
-                target.sendMessage(ChatColor.GREEN + (Lang.increasedBalance.replace("[amount]",VaultHelper.econ.format(amount))).replace("[world]", plugin.getWorldName(world)));
+                target.sendMessage(ChatColor.GREEN + (Lang.increasedBalance
+                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                        .replace("[world]", plugin.getWorldName(world)));
                 return true;
             }
             return false;

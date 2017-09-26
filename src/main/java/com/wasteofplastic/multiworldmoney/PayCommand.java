@@ -76,9 +76,14 @@ public class PayCommand implements CommandExecutor {
                             if (er.transactionSuccess()) {
                                 // Set the balance in the sender's world
                                 plugin.getPlayers().deposit(target, player.getWorld(), amount);
-                                sender.sendMessage(ChatColor.GREEN + ((Lang.sendTo.replace("[name]", target.getName())).replace("[amount]",
-                                        VaultHelper.econ.format(amount))).replace("[world]", player.getWorld().getName()));
-                                target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom.replace("[amount]",VaultHelper.econ.format(amount))).replace("[world]", player.getWorld().getName()));
+                                sender.sendMessage(ChatColor.GREEN + ((Lang.sendTo
+                                        .replace("[name]", target.getName()))
+                                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                                        .replace("[world]", player.getWorld().getName()));
+                                target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
+                                        .replace("[name]", sender.getName())
+                                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                                        .replace("[world]", player.getWorld().getName()));
                                 // Override the payment
                                 return true;
                             } else {
@@ -115,9 +120,14 @@ public class PayCommand implements CommandExecutor {
         EconomyResponse erw = VaultHelper.econ.withdrawPlayer(player, amount);
         if (erw.transactionSuccess()) {
             VaultHelper.econ.depositPlayer(target, amount);
-            player.sendMessage(ChatColor.GREEN + ((Lang.sendTo.replace("[name]", target.getName())).replace("[amount]",
-                    VaultHelper.econ.format(amount))).replace("[world]", player.getWorld().getName()));
-            target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom.replace("[amount]",VaultHelper.econ.format(amount))).replace("[world]", player.getWorld().getName()));
+            player.sendMessage(ChatColor.GREEN + ((Lang.sendTo
+                    .replace("[name]", target.getName()))
+                    .replace("[amount]", VaultHelper.econ.format(amount)))
+                    .replace("[world]", player.getWorld().getName()));
+            target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
+                    .replace("[name]", player.getName())
+                    .replace("[amount]", VaultHelper.econ.format(amount)))
+                    .replace("[world]", player.getWorld().getName()));
         } else {
             // Cannot pay - let pay handle the error
             player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.insufficientFunds);
