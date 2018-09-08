@@ -3,8 +3,6 @@ package com.wasteofplastic.multiworldmoney;
 import java.util.List;
 import java.util.UUID;
 
-import net.milkbowl.vault.economy.EconomyResponse;
-
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -14,12 +12,14 @@ import org.bukkit.entity.Player;
 
 import com.onarandombox.MultiverseCore.api.MultiverseWorld;
 
-public class AdminCommands implements CommandExecutor {
+import net.milkbowl.vault.economy.EconomyResponse;
 
-    private MultiWorldMoney plugin;
+class AdminCommands implements CommandExecutor {
+
+    private final MultiWorldMoney plugin;
 
     /**
-     * @param plugin
+     * @param plugin - plugin
      */
     public AdminCommands(MultiWorldMoney plugin) {
         this.plugin = plugin;
@@ -29,7 +29,7 @@ public class AdminCommands implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player) {
             // Check permission
-            if (!VaultHelper.checkPerm((Player)sender, "mwm.admin")) {
+            if (VaultHelper.checkPerm((Player) sender, "mwm.admin")) {
                 sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
                 return true;
             }
@@ -55,7 +55,7 @@ public class AdminCommands implements CommandExecutor {
                 return true;
             }
             // Check amount
-            double amount = 0D;
+            double amount;
             try {
                 amount = Double.valueOf(args[2]);
             } catch (Exception e) {

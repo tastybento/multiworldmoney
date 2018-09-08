@@ -5,11 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -23,14 +19,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.onarandombox.MultiverseCore.api.MultiverseWorld;
 
-public class MultiWorldMoney extends JavaPlugin {
+class MultiWorldMoney extends JavaPlugin {
 
-    private FileConfiguration config;
-    private HashMap<String,List<World>> worldGroups = new HashMap<String, List<World>>();
-    private HashMap<World,String> reverseWorldGroups = new HashMap<World, String>();
+    private final HashMap<String,List<World>> worldGroups = new HashMap<>();
+    private final HashMap<World,String> reverseWorldGroups = new HashMap<>();
     private PlayerCache players;
     private MultiverseCore core = null;
-    private Lang locale;
 
 
     @Override
@@ -53,7 +47,7 @@ public class MultiWorldMoney extends JavaPlugin {
             if (!playersFolder.exists()) {
                 playersFolder.mkdir();
             }
-            for (File playerFile : userDataFolder.listFiles()) {
+            for (File playerFile : Objects.requireNonNull(userDataFolder.listFiles())) {
                 if (playerFile.getName().endsWith(".yml")) {
                     // Load the file
                     YamlConfiguration player = new YamlConfiguration();
@@ -61,11 +55,11 @@ public class MultiWorldMoney extends JavaPlugin {
                         player.load(playerFile);
                         // Extract the data
                         String uuidString = player.getString("playerinfo.uuid");
-                        if (uuidString != null) { 
+                        if (uuidString != null) {
                             UUID uuid = UUID.fromString(uuidString);
                             File convert = new File(playersFolder,uuid.toString() + ".yml");
                             if (convert.exists()) {
-                                getLogger().severe(uuid.toString() + ".yml exists already! Skipping import..."); 
+                                getLogger().severe(uuid.toString() + ".yml exists already! Skipping import...");
                             } else {
                                 YamlConfiguration newPlayer = new YamlConfiguration();
                                 String name = player.getString("playerinfo.name");
@@ -91,7 +85,7 @@ public class MultiWorldMoney extends JavaPlugin {
                                     }
                                 }
                                 newPlayer.save(convert);
-                                if (name != null && uuid != null) {
+                                if (name != null) {
                                     players.addName(name, uuid);
                                 }
                                 getLogger().info("Converted " + name);
@@ -115,19 +109,19 @@ public class MultiWorldMoney extends JavaPlugin {
         saveDefaultConfig();
         loadConfig();
         // Load locale
-        locale = new Lang(this);
+        new Lang(this);
 
         // Hook into the Vault economy system
         if (!VaultHelper.setupEconomy()) {
             getLogger().severe("Could not link to Vault and Economy!");
         } else {
-            getLogger().info("Set up economy successfully"); 
+            getLogger().info("Set up economy successfully");
         }
         if (!VaultHelper.setupPermissions()) {
             getLogger().severe("Could not set up permissions!");
         } else {
-            getLogger().info("Set up permissions successfully"); 
-        }	
+            getLogger().info("Set up permissions successfully");
+        }
         // Load world groups
         loadGroups();
 
@@ -137,7 +131,7 @@ public class MultiWorldMoney extends JavaPlugin {
         }
 
         // Register events
-        PluginManager pm = getServer().getPluginManager();		
+        PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new LogInOutListener(this), this);
         pm.registerEvents(new WorldChangeListener(this), this);
 
@@ -146,20 +140,14 @@ public class MultiWorldMoney extends JavaPlugin {
         getCommand("balance").setExecutor(new BalanceCommand(this));
         getCommand("mwm").setExecutor(new AdminCommands(this));
 
-        // Metrics
-        try {
-            final Metrics metrics = new Metrics(this);
-            metrics.start();
-        } catch (final IOException localIOException) {
-        }
     }
 
 
     /**
      * Load the settings for the plugin from config.yml and set up defaults.
      */
-    public void loadConfig() {
-        config = getConfig();
+    private void loadConfig() {
+        FileConfiguration config = getConfig();
         Settings.showBalance = config.getBoolean("shownewworldmessage", true);
         Settings.newWorldMessage = ChatColor.translateAlternateColorCodes('&', config.getString("newworldmessage", "Your balance in this world is [balance]."));
     }
@@ -179,12 +167,12 @@ public class MultiWorldMoney extends JavaPlugin {
      */
     public void loadGroups() {
         worldGroups.clear();
-        YamlConfiguration groups = loadYamlFile("groups.yml");
+        YamlConfiguration groups = loadYamlFile();
         Set<String> keys = groups.getKeys(false);
         // Each key is a group name
         for(String group : keys) {
             List<String> worlds = groups.getStringList(group);
-            List<World> worldList = new ArrayList<World>();
+            List<World> worldList = new ArrayList<>();
             for(String world : worlds) {
                 // Try to parse world into a known world
                 World importedWorld = getServer().getWorld(world);
@@ -203,47 +191,46 @@ public class MultiWorldMoney extends JavaPlugin {
 
     /**
      * Tries to load a YML file. If it does not exist, it looks in the jar for it and tries to create it.
-     * @param file
      * @return config object
      */
-    public YamlConfiguration loadYamlFile(String file) {
+    private YamlConfiguration loadYamlFile() {
         File dataFolder = getDataFolder();
-        File yamlFile = new File(dataFolder, file);
+        File yamlFile = new File(dataFolder, "groups.yml");
         YamlConfiguration config = new YamlConfiguration();
         if(yamlFile.exists()) {
             try {
                 config.load(yamlFile);
             } catch (FileNotFoundException e) {
-                getLogger().severe("File not found: " + file);
+                getLogger().severe("File not found: " + "groups.yml");
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InvalidConfigurationException e) {
-                getLogger().severe("YAML file has errors: " + file);
+                getLogger().severe("YAML file has errors: " + "groups.yml");
                 e.printStackTrace();
             }
         } else {
             // Try to make it from a built-in file
-            if (getResource(file) != null) {
-                saveResource(file,true);
+            if (getResource("groups.yml") != null) {
+                saveResource("groups.yml",true);
                 try {
                     config.load(yamlFile);
                 } catch (FileNotFoundException e) {
-                    getLogger().severe("File not found: " + file);
+                    getLogger().severe("File not found: " + "groups.yml");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InvalidConfigurationException e) {
-                    getLogger().severe("YAML file has errors: " + file);
+                    getLogger().severe("YAML file has errors: " + "groups.yml");
                     e.printStackTrace();
                 }
             } else {
-                getLogger().severe("File not found: " + file);
+                getLogger().severe("File not found: " + "groups.yml");
             }
         }
         return config;
     }
     /**
-     * @param yamlFile
-     * @param fileLocation
+     * @param yamlFile - config file
+     * @param fileLocation - file name location
      */
     public void saveYamlFile(YamlConfiguration yamlFile, String fileLocation) {
         File dataFolder = getDataFolder();
@@ -259,14 +246,14 @@ public class MultiWorldMoney extends JavaPlugin {
 
     /**
      * Finds what other worlds are in the group this world is in, or just itself
-     * @param world
+     * @param world - world
      * @return List of worlds in group
      */
     public List<World> getGroupWorlds(World world) {
         if (reverseWorldGroups.containsKey(world)) {
             return worldGroups.get(reverseWorldGroups.get(world));
         } else {
-            List<World> result = new ArrayList<World>();
+            List<World> result = new ArrayList<>();
             result.add(world);
             return result;
         }
@@ -274,9 +261,9 @@ public class MultiWorldMoney extends JavaPlugin {
 
     /**
      * Rounds a double down to a set number of places
-     * @param value
-     * @param places
-     * @return
+     * @param value - value
+     * @param places - number of placed
+     * @return - rounded value
      */
     public double roundDown(double value, int places) {
         BigDecimal bd = new BigDecimal(value);
@@ -294,7 +281,7 @@ public class MultiWorldMoney extends JavaPlugin {
 
     /**
      * Returns the name of world, uses MultiverseCore alias if available
-     * @param world
+     * @param world - world
      * @return world name or alias
      */
     public String getWorldName(World world) {
@@ -305,7 +292,7 @@ public class MultiWorldMoney extends JavaPlugin {
             } catch (Exception e) {
                 // do nothing if it does not work
                 e.printStackTrace();
-            }	    
+            }
         }
         //getLogger().info("DEBUG: core is null");
         return world.getName();
@@ -321,9 +308,9 @@ public class MultiWorldMoney extends JavaPlugin {
 
 
     /**
-     * @return the locale
+     * Reload locale
      */
     public void reloadLocale() {
-        locale = new Lang(this);
+        new Lang(this);
     }
 }

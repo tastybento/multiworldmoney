@@ -2,8 +2,6 @@ package com.wasteofplastic.multiworldmoney;
 
 import java.util.List;
 
-import net.milkbowl.vault.economy.EconomyResponse;
-
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -11,12 +9,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 
-public class WorldChangeListener implements Listener {
-    private MultiWorldMoney plugin;
+import net.milkbowl.vault.economy.EconomyResponse;
+
+class WorldChangeListener implements Listener {
+    private final MultiWorldMoney plugin;
 
 
     /**
-     * @param plugin
+     * @param plugin plugin
      */
     public WorldChangeListener(MultiWorldMoney plugin) {
         this.plugin = plugin;

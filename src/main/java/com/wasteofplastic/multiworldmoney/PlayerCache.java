@@ -1,7 +1,6 @@
 package com.wasteofplastic.multiworldmoney;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -12,28 +11,25 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 public class PlayerCache {
-    private MultiWorldMoney plugin;
-    private HashMap<UUID, Players> cache; 
-    private HashMap<String, UUID> names; 
-    private HashMap<String, UUID> lowerCaseNames;
-    private HashMap<UUID, String> reverseNames;
+    private final MultiWorldMoney plugin;
+    private final HashMap<UUID, Players> cache;
+    private final HashMap<String, UUID> names;
+    private final HashMap<String, UUID> lowerCaseNames;
+    private final HashMap<UUID, String> reverseNames;
 
     public PlayerCache(MultiWorldMoney plugin) {
         // Initialize
         this.plugin = plugin;
-        this.cache = new HashMap<UUID, Players>();
-        this.names = new HashMap<String, UUID>();
-        this.lowerCaseNames = new HashMap<String, UUID>();
-        this.reverseNames = new HashMap<UUID, String>();
+        this.cache = new HashMap<>();
+        this.names = new HashMap<>();
+        this.lowerCaseNames = new HashMap<>();
+        this.reverseNames = new HashMap<>();
         // Load the name file
         File namesFile = new File(plugin.getDataFolder(), "names.yml");
         YamlConfiguration nameConfig = new YamlConfiguration();
         if (namesFile.exists()) {
             try {
                 nameConfig.load(namesFile);
-            } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -59,16 +55,13 @@ public class PlayerCache {
 
     /**
      * Add player to the cache
-     * @param player
+     * @param player - player
      */
     public void addPlayer(Player player) {
-        //plugin.getLogger().info("DEBUG: Add player called");
-        // Check for new name
+         // Check for new name
         if (reverseNames.containsKey(player.getUniqueId())) {
-            //plugin.getLogger().info("DEBUG: UUID is known");
             // UUID is known
             if (!reverseNames.get(player.getUniqueId()).equals(player.getName())) {
-                //plugin.getLogger().info("DEBUG: new name for this UUID");
                 // New name for this UUID
                 String oldName = reverseNames.get(player.getUniqueId());
                 reverseNames.put(player.getUniqueId(), player.getName());
@@ -78,7 +71,6 @@ public class PlayerCache {
                 lowerCaseNames.put(player.getName().toLowerCase(), player.getUniqueId());
             } // else do nothing
         } else {
-            //plugin.getLogger().info("DEBUG: New UUID");
             // New UUID
             if (names.containsKey(player.getName()) || lowerCaseNames.containsKey(player.getName().toLowerCase())) {
                 // Name exists, but UUID did not exist in the reverseNames list.
@@ -92,7 +84,6 @@ public class PlayerCache {
         }
         // Add to the cache
         if (!cache.containsKey(player.getUniqueId())) {
-            //plugin.getLogger().info("DEBUG: Adding " + player.getName() + " to cache");
             Players newPlayer = new Players(plugin, player);
             cache.put(player.getUniqueId(), newPlayer);
         }
@@ -106,7 +97,6 @@ public class PlayerCache {
         File namesFile = new File(plugin.getDataFolder(), "names.yml");
         YamlConfiguration nameConfig = new YamlConfiguration();
         for (String name : names.keySet()) {
-            //plugin.getLogger().info("DEBUG: saving name " + name);
             nameConfig.set(names.get(name).toString(), name);
         }
         try {
@@ -119,7 +109,7 @@ public class PlayerCache {
 
     /**
      * Removes player from cache
-     * @param player
+     * @param player - player
      */
     public void removePlayer(Player player) {
         if (cache.containsKey(player.getUniqueId())) {
@@ -136,21 +126,20 @@ public class PlayerCache {
 
     /**
      * Deposits amount for player in world
-     * @param player
-     * @param world
-     * @param amount
+     * @param player - player
+     * @param world - world
+     * @param amount - amount
      */
     public void deposit(Player player, World world, double amount) {
-        //plugin.getLogger().info("DEBUG: Deposit " + player.getName() + " in " + world.getName() + " to $" + amount);
         addPlayer(player);
         cache.get(player.getUniqueId()).deposit(world, plugin.roundDown(amount,2));
     }
 
     /**
      * Get balance for player in world
-     * @param player
-     * @param world
-     * @return
+     * @param player - player
+     * @param world - world
+     * @return balance
      */
     public double getBalance(Player player, World world) {
         addPlayer(player);
@@ -159,7 +148,7 @@ public class PlayerCache {
 
     /**
      * Get a name from a UUID. Returns null if unknown.
-     * @param playerUUID
+     * @param playerUUID - uuid
      * @return name
      */
     public String getName(UUID playerUUID) {
@@ -170,8 +159,8 @@ public class PlayerCache {
      * Get a UUID from a string. Returns null if unknown.
      * Automatically tries lower case as well as upper case characters.
      * Player must have played at least once to be known.
-     * @param name
-     * @return UUID
+     * @param name name
+     * @return UUID uuid
      */
     public UUID getUUID(String name) {
         // lower case names take precedence over mixed case
@@ -183,9 +172,9 @@ public class PlayerCache {
 
     /**
      * Set player balance in world
-     * @param player
-     * @param world
-     * @param balance
+     * @param player player
+     * @param world world
+     * @param balance balance
      */
     public void setBalance(Player player, World world, double balance) {
         //plugin.getLogger().info("DEBUG: Setting balance " + player.getName() + " in " + world.getName() + " to $" + balance);
@@ -195,9 +184,9 @@ public class PlayerCache {
 
     /**
      * Withdraw amount from player in world
-     * @param player
-     * @param world
-     * @param amount
+     * @param player - player
+     * @param world - world
+     * @param amount - amount to withdraw
      */
     public void withdraw(Player player, World world, double amount) {
         //plugin.getLogger().info("DEBUG: Withdrawing " + player.getName() + " in " + world.getName() + " to $" + amount);
@@ -207,7 +196,7 @@ public class PlayerCache {
 
     /**
      * Get the log off world
-     * @param playerUUID
+     * @param playerUUID uuid
      * @return World or null
      */
     public World getLogOutWorld(UUID playerUUID) {
@@ -223,13 +212,7 @@ public class PlayerCache {
             //plugin.getLogger().info("DEBUG: loading file "); 
             try {
                 playerConfig.load(userFile);
-            } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InvalidConfigurationException e) {
+            } catch (InvalidConfigurationException | IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
@@ -242,8 +225,8 @@ public class PlayerCache {
 
     /**
      * Adds a name/UUID pair to the database
-     * @param name
-     * @param uuid
+     * @param name - player's name
+     * @param uuid - player's UUID
      */
     public void addName(String name, UUID uuid) {
         names.put(name, uuid);

@@ -2,9 +2,9 @@ package com.wasteofplastic.multiworldmoney;
 
 import org.bukkit.ChatColor;
 
-public class Lang {
+class Lang {
 
-    private MultiWorldMoney plugin;
+    private final MultiWorldMoney plugin;
     public static String setHelp;
     public static String deposited;
     public static String increasedBalance;
@@ -36,14 +36,14 @@ public class Lang {
     public static String receiveFrom;
     public static String insufficientFunds;
     /**
-     * @param plugin
+     * @param plugin - plugin
      */
     public Lang(MultiWorldMoney plugin) {
         this.plugin = plugin;
         loadLocale();
     }
 
-    public void loadLocale() {
+    private void loadLocale() {
         // Load the defaults
         amountHelp = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("amountHelp", "<amount>"));
         amountPositive = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("amountMustBePositive", "Amount must be positive."));

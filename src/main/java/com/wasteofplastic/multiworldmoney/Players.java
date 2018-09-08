@@ -1,7 +1,6 @@
 package com.wasteofplastic.multiworldmoney;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -11,20 +10,21 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-public class Players {
+class Players {
     private UUID uuid;
     private String name;
-    private HashMap<String, Double> balances;
+    private final HashMap<String, Double> balances;
     private World logoffWorld;
-    private MultiWorldMoney plugin;
+    private final MultiWorldMoney plugin;
 
     /**
      * Loads a player
-     * @param player
+     * @param plugin - plugin
+     * @param player - player
      */
     public Players(MultiWorldMoney plugin, Player player) {
         this.plugin = plugin;
-        balances = new HashMap<String, Double>();
+        balances = new HashMap<>();
         name = "";
         load(player);
     }
@@ -55,33 +55,29 @@ public class Players {
 
     /**
      * Get balance for a specific world. 
-     * @param world
+     * @param world - world
      * @return balance or 0 if there isn't one
      */
     public double getBalance(World world) {
         if (balances.containsKey(world.getName())) {
-            //plugin.getLogger().info("DEBUG: world balance found for world '"+world.getName()+"' = $" + balances.get(world.getName()));
             return balances.get(world.getName());
         }
-        //plugin.getLogger().info("DEBUG: world balance found for world '"+world.getName()+"' not found");
         return 0D;
     }
 
     /**
      * Set balance for a specific world
-     * @param world
-     * @param balance
+     * @param world - world
+     * @param balance - balance
      */
     public void setBalance(World world, double balance) { 
-        //plugin.getLogger().info("DEBUG: Storing balance in " + world.getName() + " $" + balance);
-
         balances.put(world.getName(), balance);
     }
 
     /**
      * Deposits amount for a specific world
-     * @param world
-     * @param amount
+     * @param world world
+     * @param amount amount
      */
     public void deposit(World world, double amount) {
         if (balances.containsKey(world.getName())) {
@@ -93,8 +89,8 @@ public class Players {
 
     /**
      * Withdraws amount for a specific world
-     * @param world
-     * @param amount
+     * @param world world
+     * @param amount amount
      */
     public void withdraw(World world, double amount) {
         if (balances.containsKey(world.getName())) {
@@ -138,15 +134,13 @@ public class Players {
             player.save(user);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save player file: " + user.getAbsolutePath());
-            e.printStackTrace();
         }
     }
 
-    public void load(Player player) {
+    private void load(Player player) {
         // Get what we know
         name = player.getName();
         uuid = player.getUniqueId();
-        //plugin.getLogger().info("DEBUG: loading player " + name);
         File userFolder = new File(plugin.getDataFolder(),"players");
         if (!userFolder.exists()) {
             userFolder.mkdir();
@@ -155,33 +149,22 @@ public class Players {
         File userFile = new File(userFolder, uuid.toString() + ".yml");
         YamlConfiguration playerConfig = new YamlConfiguration();
         if (userFile.exists()) { 
-            //plugin.getLogger().info("DEBUG: loading file ");
             try {
                 playerConfig.load(userFile);
                 String logOutworld = playerConfig.getString("logoffworld", "");
                 // Get the last world. Could be null if it's not recognized
                 logoffWorld = plugin.getServer().getWorld(logOutworld);
                 if (playerConfig.contains("balances")) {
-                    //plugin.getLogger().info("DEBUG: Balances section exists");
                     // Load the balances
                     for (String world : playerConfig.getConfigurationSection("balances").getKeys(false)) {
-                        //plugin.getLogger().info("DEBUG: loading " + world);
                         World balanceWorld = plugin.getServer().getWorld(world);
                         if (balanceWorld != null) {
-                            //plugin.getLogger().info("DEBUG: world exists - balance is " + playerConfig.getDouble("balances." + world));
                             setBalance(balanceWorld, playerConfig.getDouble("balances." + world, 0D));
                         }
                     }
                 }
-            } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InvalidConfigurationException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (InvalidConfigurationException | IOException e) {
+                plugin.getLogger().severe("Could not load player info!");
             }
         }
 

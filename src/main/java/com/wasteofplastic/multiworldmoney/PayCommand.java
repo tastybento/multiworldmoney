@@ -3,8 +3,6 @@ package com.wasteofplastic.multiworldmoney;
 import java.util.List;
 import java.util.UUID;
 
-import net.milkbowl.vault.economy.EconomyResponse;
-
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -12,12 +10,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class PayCommand implements CommandExecutor {
+import net.milkbowl.vault.economy.EconomyResponse;
 
-    private MultiWorldMoney plugin;
+class PayCommand implements CommandExecutor {
+
+    private final MultiWorldMoney plugin;
 
     /**
-     * @param plugin
+     * @param plugin - plugin
      */
     public PayCommand(MultiWorldMoney plugin) {
         this.plugin = plugin;
@@ -31,7 +31,7 @@ public class PayCommand implements CommandExecutor {
             return true;
         }
         Player player = (Player)sender;
-        if (!VaultHelper.checkPerm(player, "mwm.pay")) {
+        if (VaultHelper.checkPerm(player, "mwm.pay")) {
             player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
             return true; 
         }
@@ -45,7 +45,7 @@ public class PayCommand implements CommandExecutor {
                     player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.youCannotPayYourself);
                     return true;
                 }
-                double amount = 0;
+                double amount;
                 // Check that the amount is a number
                 try {
                     amount = Double.valueOf(args[1]); // May throw NumberFormatException

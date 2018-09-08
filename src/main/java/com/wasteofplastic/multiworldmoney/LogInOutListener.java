@@ -7,12 +7,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-public class LogInOutListener implements Listener {
+class LogInOutListener implements Listener {
 
-    private MultiWorldMoney plugin;
+    private final MultiWorldMoney plugin;
 
     /**
-     * @param plugin
+     * @param plugin - plugin
      */
     public LogInOutListener(MultiWorldMoney plugin) {
         this.plugin = plugin;

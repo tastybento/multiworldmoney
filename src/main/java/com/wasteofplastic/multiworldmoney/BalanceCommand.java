@@ -1,7 +1,6 @@
 package com.wasteofplastic.multiworldmoney;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -14,12 +13,12 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-public class BalanceCommand implements CommandExecutor {
+class BalanceCommand implements CommandExecutor {
 
-    private MultiWorldMoney plugin;
+    private final MultiWorldMoney plugin;
 
     /**
-     * @param plugin
+     * @param plugin - plugin
      */
     public BalanceCommand(MultiWorldMoney plugin) {
         this.plugin = plugin;
@@ -34,7 +33,7 @@ public class BalanceCommand implements CommandExecutor {
                 return true;
             }
             Player player = (Player)sender;
-            if (!VaultHelper.checkPerm(player, "mwm.balance")) {
+            if (VaultHelper.checkPerm(player, "mwm.balance")) {
                 player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
                 return true; 
             }
@@ -130,13 +129,7 @@ public class BalanceCommand implements CommandExecutor {
                             }
                         }
                     }
-                } catch (FileNotFoundException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (InvalidConfigurationException e) {
+                } catch (InvalidConfigurationException | IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
