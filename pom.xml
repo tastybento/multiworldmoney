@@ -83,8 +83,8 @@
 			<url>http://nexus.hc.to/content/repositories/pub_releases</url>
 		</repository>
 		<repository>
-			<id>multiverse-repo</id>
-			<url>http://cnaude.org/repo</url>
-		</repository>
+            <id>onarandombox</id>
+            <url>http://repo.onarandombox.com/content/groups/public</url>
+        </repository>
 	</repositories>
 </project>
