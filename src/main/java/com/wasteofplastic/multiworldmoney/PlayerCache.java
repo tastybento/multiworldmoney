@@ -58,7 +58,7 @@ public class PlayerCache {
      * @param player - player
      */
     public void addPlayer(Player player) {
-         // Check for new name
+        // Check for new name
         if (reverseNames.containsKey(player.getUniqueId())) {
             // UUID is known
             if (!reverseNames.get(player.getUniqueId()).equals(player.getName())) {
@@ -116,7 +116,7 @@ public class PlayerCache {
             // Set the logout world
             cache.get(player.getUniqueId()).setLogoffWorld(player.getWorld());
             // Set the balance for their final world
-            cache.get(player.getUniqueId()).setBalance(player.getWorld(), VaultHelper.econ.getBalance(player));
+            cache.get(player.getUniqueId()).setBalance(player.getWorld(), plugin.getVh().getEcon().getBalance(player));
             // save player and remove from cache
             cache.get(player.getUniqueId()).save();
             cache.remove(player.getUniqueId());
@@ -208,8 +208,8 @@ public class PlayerCache {
         // Load the info on this player
         File userFile = new File(userFolder, playerUUID.toString() + ".yml");
         YamlConfiguration playerConfig = new YamlConfiguration();
-        if (userFile.exists()) { 
-            //plugin.getLogger().info("DEBUG: loading file "); 
+        if (userFile.exists()) {
+            //plugin.getLogger().info("DEBUG: loading file ");
             try {
                 playerConfig.load(userFile);
             } catch (InvalidConfigurationException | IOException e) {

@@ -33,26 +33,26 @@ class BalanceCommand implements CommandExecutor {
                 return true;
             }
             Player player = (Player)sender;
-            if (VaultHelper.checkPerm(player, "mwm.balance")) {
+            if (plugin.getVh().checkPerm(player, "mwm.balance")) {
                 player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
-                return true; 
+                return true;
             }
             // Show balance in each world
             double total = 0D;
             for (World world : plugin.getServer().getWorlds()) {
                 double amount = plugin.getPlayers().getBalance(player, world);
                 if (player.getWorld().equals(world)) {
-                    amount = VaultHelper.econ.getBalance(player);
+                    amount = plugin.getVh().getEcon().getBalance(player);
                 }
                 if (amount > 0D) {
                     total += amount;
-                    player.sendMessage(plugin.getWorldName(world) + ": " + VaultHelper.econ.format(amount));
+                    player.sendMessage(plugin.getWorldName(world) + ": " + plugin.getVh().getEcon().format(amount));
                 } else if (amount < 0D) {
                     total += amount;
-                    player.sendMessage(plugin.getWorldName(world) + ": " + ChatColor.RED + VaultHelper.econ.format(amount));
+                    player.sendMessage(plugin.getWorldName(world) + ": " + ChatColor.RED + plugin.getVh().getEcon().format(amount));
                 }
             }
-            player.sendMessage("Total : " + VaultHelper.econ.format(total));
+            player.sendMessage("Total : " + plugin.getVh().getEcon().format(total));
             return true;
         } else if (args.length == 1) {
             // balance <name> command
@@ -60,7 +60,7 @@ class BalanceCommand implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
                 return true;
             }
-            // Check if the player exists 
+            // Check if the player exists
             UUID targetUUID = plugin.getPlayers().getUUID(args[0]);
             if (targetUUID == null) {
                 //plugin.getLogger().info("DEBUG: player is not in list of known players");
@@ -77,17 +77,17 @@ class BalanceCommand implements CommandExecutor {
                 for (World world : plugin.getServer().getWorlds()) {
                     double amount = plugin.getPlayers().getBalance(target, world);
                     if (target.getWorld().equals(world)) {
-                        amount = VaultHelper.econ.getBalance(target);
+                        amount = plugin.getVh().getEcon().getBalance(target);
                     }
                     if (amount > 0D) {
                         total += amount;
-                        sender.sendMessage(plugin.getWorldName(world) + ": " + VaultHelper.econ.format(amount));
+                        sender.sendMessage(plugin.getWorldName(world) + ": " + plugin.getVh().getEcon().format(amount));
                     } else if (amount < 0D) {
                         total += amount;
-                        sender.sendMessage(plugin.getWorldName(world) + ": " + ChatColor.RED + VaultHelper.econ.format(amount));
+                        sender.sendMessage(plugin.getWorldName(world) + ": " + ChatColor.RED + plugin.getVh().getEcon().format(amount));
                     }
                 }
-                sender.sendMessage(Lang.total.replace("[total]", VaultHelper.econ.format(total)));
+                sender.sendMessage(Lang.total.replace("[total]", plugin.getVh().getEcon().format(total)));
                 return true;
             }
             // Offline player
@@ -99,7 +99,7 @@ class BalanceCommand implements CommandExecutor {
             // Load the info on this player
             File userFile = new File(userFolder, targetUUID.toString() + ".yml");
             YamlConfiguration playerConfig = new YamlConfiguration();
-            if (userFile.exists()) { 
+            if (userFile.exists()) {
                 sender.sendMessage(Lang.offlineBalance.replace("[balance]",plugin.getPlayers().getName(targetUUID)));
                 double total = 0D;
                 //plugin.getLogger().info("DEBUG: loading file ");
@@ -117,14 +117,14 @@ class BalanceCommand implements CommandExecutor {
                             if (world != null) {
                                 double amount = playerConfig.getDouble("balances." + worldName, 0D);
                                 if (world == logoffWorld) {
-                                    amount = VaultHelper.econ.getBalance(plugin.getServer().getOfflinePlayer(targetUUID));
+                                    amount = plugin.getVh().getEcon().getBalance(plugin.getServer().getOfflinePlayer(targetUUID));
                                 }
                                 if (amount > 0D) {
                                     total += amount;
-                                    sender.sendMessage(plugin.getWorldName(world) + ": " + VaultHelper.econ.format(amount));
+                                    sender.sendMessage(plugin.getWorldName(world) + ": " + plugin.getVh().getEcon().format(amount));
                                 } else if (amount < 0D) {
                                     total += amount;
-                                    sender.sendMessage(plugin.getWorldName(world) + ": " + ChatColor.RED + VaultHelper.econ.format(amount));
+                                    sender.sendMessage(plugin.getWorldName(world) + ": " + ChatColor.RED + plugin.getVh().getEcon().format(amount));
                                 }
                             }
                         }
@@ -133,11 +133,11 @@ class BalanceCommand implements CommandExecutor {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                sender.sendMessage(Lang.total.replace("[total]", VaultHelper.econ.format(total)));
+                sender.sendMessage(Lang.total.replace("[total]", plugin.getVh().getEcon().format(total)));
                 return true;
             } else {
                 sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPlayer);
-                return true; 
+                return true;
             }
         }
         return false;

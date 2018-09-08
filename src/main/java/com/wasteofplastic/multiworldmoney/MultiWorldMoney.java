@@ -5,7 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -19,16 +24,21 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.onarandombox.MultiverseCore.api.MultiverseWorld;
 
-class MultiWorldMoney extends JavaPlugin {
+public class MultiWorldMoney extends JavaPlugin {
 
     private final HashMap<String,List<World>> worldGroups = new HashMap<>();
     private final HashMap<World,String> reverseWorldGroups = new HashMap<>();
     private PlayerCache players;
-    private MultiverseCore core = null;
+    private MultiverseCore core;
+    private VaultHelper vh;
+    private Settings settings;
 
 
     @Override
     public void onEnable() {
+        // Load Settings
+        settings = new Settings();
+
         // Load cache
         players = new PlayerCache(this);
 
@@ -112,12 +122,13 @@ class MultiWorldMoney extends JavaPlugin {
         new Lang(this);
 
         // Hook into the Vault economy system
-        if (!VaultHelper.setupEconomy()) {
+        vh = new VaultHelper();
+        if (!vh.setupEconomy()) {
             getLogger().severe("Could not link to Vault and Economy!");
         } else {
             getLogger().info("Set up economy successfully");
         }
-        if (!VaultHelper.setupPermissions()) {
+        if (!vh.setupPermissions()) {
             getLogger().severe("Could not set up permissions!");
         } else {
             getLogger().info("Set up permissions successfully");
@@ -148,8 +159,8 @@ class MultiWorldMoney extends JavaPlugin {
      */
     private void loadConfig() {
         FileConfiguration config = getConfig();
-        Settings.showBalance = config.getBoolean("shownewworldmessage", true);
-        Settings.newWorldMessage = ChatColor.translateAlternateColorCodes('&', config.getString("newworldmessage", "Your balance in this world is [balance]."));
+        settings.setShowBalance(config.getBoolean("shownewworldmessage", true));
+        settings.setNewWorldMessage(ChatColor.translateAlternateColorCodes('&', config.getString("newworldmessage", "Your balance in this world is [balance].")));
     }
 
 
@@ -312,5 +323,22 @@ class MultiWorldMoney extends JavaPlugin {
      */
     public void reloadLocale() {
         new Lang(this);
+    }
+
+
+    /**
+     * Get VaultHelper
+     * @return the vh
+     */
+    public VaultHelper getVh() {
+        return vh;
+    }
+
+
+    /**
+     * @return the settings
+     */
+    public Settings getSettings() {
+        return settings;
     }
 }

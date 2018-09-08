@@ -11,15 +11,15 @@ import net.milkbowl.vault.permission.Permission;
  * Helper class for Vault Economy and Permissions
  */
 class VaultHelper {
-    public static Economy econ = null;
-    private static Permission permission = null;
+    private Economy econ = null;
+    private Permission permission = null;
 
     /**
      * Sets up the economy instance
-     * 
+     *
      * @return true if successful
      */
-    public static boolean setupEconomy() {
+    public boolean setupEconomy() {
         RegisteredServiceProvider<Economy> economyProvider = Bukkit.getServer().getServicesManager()
                 .getRegistration(net.milkbowl.vault.economy.Economy.class);
         if (economyProvider != null) {
@@ -30,10 +30,10 @@ class VaultHelper {
 
     /**
      * Sets up the permissions instance
-     * 
+     *
      * @return true if successful
      */
-    public static boolean setupPermissions() {
+    public boolean setupPermissions() {
         RegisteredServiceProvider<Permission> permissionProvider = Bukkit.getServer().getServicesManager()
                 .getRegistration(net.milkbowl.vault.permission.Permission.class);
         if (permissionProvider != null) {
@@ -43,33 +43,47 @@ class VaultHelper {
     }
 
     /**
+     * @return the econ
+     */
+    public Economy getEcon() {
+        return econ;
+    }
+
+    /**
+     * @return the permission
+     */
+    public Permission getPermission() {
+        return permission;
+    }
+
+    /**
      * Checks permission of player in world or in any world
-     * 
+     *
      * @param player player
      * @param perm permission string
      * @return true if player has permission
      */
-    public static boolean checkPerm(final Player player, final String perm) {
+    public boolean checkPerm(final Player player, final String perm) {
         return !permission.has(player, perm);
     }
 
     /**
      * Adds permission to player
-     * 
+     *
      * @param player player
      * @param perm permission string
      */
-    public static void addPerm(final Player player, final String perm) {
+    public void addPerm(final Player player, final String perm) {
         permission.playerAdd(player, perm);
     }
 
     /**
      * Removes a player's permission
-     * 
+     *
      * @param player player
      * @param perm permission string
      */
-    public static void removePerm(final Player player, final String perm) {
+    public void removePerm(final Player player, final String perm) {
         permission.playerRemove(player, perm);
     }
 

@@ -25,7 +25,7 @@ class LogInOutListener implements Listener {
         plugin.getPlayers().addPlayer(player);
         // Set the balance for this player in whatever world they are in because it may have changed while
         // they were offline
-        double balance = VaultHelper.econ.getBalance(player);
+        double balance = plugin.getVh().getEcon().getBalance(player);
         plugin.getPlayers().setBalance(player, player.getWorld(), balance);
     }
 

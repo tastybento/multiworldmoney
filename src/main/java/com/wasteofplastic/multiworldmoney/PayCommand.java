@@ -31,9 +31,9 @@ class PayCommand implements CommandExecutor {
             return true;
         }
         Player player = (Player)sender;
-        if (VaultHelper.checkPerm(player, "mwm.pay")) {
+        if (plugin.getVh().checkPerm(player, "mwm.pay")) {
             player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
-            return true; 
+            return true;
         }
         if (args.length == 2) {
             // correctly formed pay command /pay name amount
@@ -72,17 +72,17 @@ class PayCommand implements CommandExecutor {
                         if (!groupWorlds.contains(player.getWorld())) {
                             // They are not in the same group
                             // Try to withdraw the amount
-                            EconomyResponse er = VaultHelper.econ.withdrawPlayer(player, amount);
+                            EconomyResponse er = plugin.getVh().getEcon().withdrawPlayer(player, amount);
                             if (er.transactionSuccess()) {
                                 // Set the balance in the sender's world
                                 plugin.getPlayers().deposit(target, player.getWorld(), amount);
                                 sender.sendMessage(ChatColor.GREEN + ((Lang.sendTo
                                         .replace("[name]", target.getName()))
-                                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                                        .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                                         .replace("[world]", player.getWorld().getName()));
                                 target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
                                         .replace("[name]", sender.getName())
-                                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                                        .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                                         .replace("[world]", player.getWorld().getName()));
                                 // Override the payment
                                 return true;
@@ -96,7 +96,7 @@ class PayCommand implements CommandExecutor {
                             pay(target, player, amount);
                             return true;
                         }
-                    } 
+                    }
                     // Same world - allow the transfer
                     pay(target, player, amount);
                     return true;
@@ -107,7 +107,7 @@ class PayCommand implements CommandExecutor {
                 }
             } else {
                 sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPlayer);
-                return true; 
+                return true;
             }
         }
         player.sendMessage(Lang.payHelp);
@@ -117,16 +117,16 @@ class PayCommand implements CommandExecutor {
 
 
     private void pay(Player target, Player player, double amount) {
-        EconomyResponse erw = VaultHelper.econ.withdrawPlayer(player, amount);
+        EconomyResponse erw = plugin.getVh().getEcon().withdrawPlayer(player, amount);
         if (erw.transactionSuccess()) {
-            VaultHelper.econ.depositPlayer(target, amount);
+            plugin.getVh().getEcon().depositPlayer(target, amount);
             player.sendMessage(ChatColor.GREEN + ((Lang.sendTo
                     .replace("[name]", target.getName()))
-                    .replace("[amount]", VaultHelper.econ.format(amount)))
+                    .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                     .replace("[world]", player.getWorld().getName()));
             target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
                     .replace("[name]", player.getName())
-                    .replace("[amount]", VaultHelper.econ.format(amount)))
+                    .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                     .replace("[world]", player.getWorld().getName()));
         } else {
             // Cannot pay - let pay handle the error

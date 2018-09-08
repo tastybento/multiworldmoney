@@ -29,7 +29,7 @@ class AdminCommands implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player) {
             // Check permission
-            if (VaultHelper.checkPerm((Player) sender, "mwm.admin")) {
+            if (plugin.getVh().checkPerm((Player) sender, "mwm.admin")) {
                 sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.noPermission);
                 return true;
             }
@@ -88,16 +88,16 @@ class AdminCommands implements CommandExecutor {
             if (args[0].equalsIgnoreCase("set")) {
                 if (groupWorlds.contains(target.getWorld())) {
                     // Set
-                    double oldBalance = plugin.roundDown(VaultHelper.econ.getBalance(target), 2);
+                    double oldBalance = plugin.roundDown(plugin.getVh().getEcon().getBalance(target), 2);
                     if (oldBalance > amount) {
-                        EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, oldBalance - amount);
+                        EconomyResponse er = plugin.getVh().getEcon().withdrawPlayer(target, oldBalance - amount);
                         if (!er.transactionSuccess()) {
                             // Cannot set
                             sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + er.errorMessage);
                             return true;
                         }
                     } else if (oldBalance < amount) {
-                        EconomyResponse er = VaultHelper.econ.depositPlayer(target, amount - oldBalance);
+                        EconomyResponse er = plugin.getVh().getEcon().depositPlayer(target, amount - oldBalance);
                         if (!er.transactionSuccess()) {
                             // Cannot set
                             sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + er.errorMessage);
@@ -107,29 +107,29 @@ class AdminCommands implements CommandExecutor {
                 } else {
                     if (amount < 0D) {
                         // It will - see if loans are allowed
-                        double balance = VaultHelper.econ.getBalance(target) - amount;
+                        double balance = plugin.getVh().getEcon().getBalance(target) - amount;
                         // Try to withdraw an amount and see what happens
-                        EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, balance);
+                        EconomyResponse er = plugin.getVh().getEcon().withdrawPlayer(target, balance);
                         if (er.transactionSuccess()) {
                             // Put it back
-                            VaultHelper.econ.depositPlayer(target, balance);
+                            plugin.getVh().getEcon().depositPlayer(target, balance);
                         } else {
                             sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + er.errorMessage);
                             return true;
-                        }	
+                        }
                     }
                     plugin.getPlayers().setBalance(target, world, amount);
                 }
                 if (!sender.equals(target)) {
                     sender.sendMessage(ChatColor.GREEN + ((Lang.setBalanceTo
                             .replace("[name]", target.getName()))
-                            .replace("[amount]", VaultHelper.econ.format(amount)))
+                            .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                             .replace("[world]", plugin.getWorldName(world)));
                 }
                 target.sendMessage(ChatColor.GREEN + (Lang.yourBalanceSetTo
-                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                        .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                         .replace("[world]", plugin.getWorldName(world)));
-                return true;	
+                return true;
             } else if (args[0].equalsIgnoreCase("take")) {
                 if (amount < 0D) {
                     sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.amountPositive);
@@ -137,39 +137,39 @@ class AdminCommands implements CommandExecutor {
                 }
                 if (groupWorlds.contains(target.getWorld())) {
                     // Same group - let the economy handle any loan issues
-                    EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, amount);
+                    EconomyResponse er = plugin.getVh().getEcon().withdrawPlayer(target, amount);
                     if (!er.transactionSuccess()) {
                         // Cannot set
                         sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + er.errorMessage);
                         return true;
                     }
-                } else { 
+                } else {
                     // Not in the same group
                     // Check to see if loans are allowed
                     // Check to see if this will result in a negative balance
                     if (amount > plugin.getPlayers().getBalance(target, world)) {
                         // It will - see if loans are allowed
-                        double balance = VaultHelper.econ.getBalance(target) + amount - plugin.getPlayers().getBalance(target, world);
+                        double balance = plugin.getVh().getEcon().getBalance(target) + amount - plugin.getPlayers().getBalance(target, world);
                         // Try to withdraw an amount and see what happens
-                        EconomyResponse er = VaultHelper.econ.withdrawPlayer(target, balance);
+                        EconomyResponse er = plugin.getVh().getEcon().withdrawPlayer(target, balance);
                         if (er.transactionSuccess()) {
                             // Put it back
-                            VaultHelper.econ.depositPlayer(target, balance);
+                            plugin.getVh().getEcon().depositPlayer(target, balance);
                         } else {
                             sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + er.errorMessage);
                             return true;
-                        }	
+                        }
                     }
                     plugin.getPlayers().withdraw(target, world, amount);
                 }
                 if (!sender.equals(target)) {
                     sender.sendMessage(ChatColor.GREEN + ((Lang.withdrew
                             .replace("[name]", target.getName()))
-                            .replace("[amount]", VaultHelper.econ.format(amount)))
+                            .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                             .replace("[world]", plugin.getWorldName(world)));
                 }
                 target.sendMessage(ChatColor.GREEN + (Lang.reduceBalance
-                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                        .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                         .replace("[world]", plugin.getWorldName(world)));
                 return true;
             } else if (args[0].equalsIgnoreCase("give")) {
@@ -179,7 +179,7 @@ class AdminCommands implements CommandExecutor {
                 }
                 // Check which world the player is in
                 if (groupWorlds.contains(target.getWorld())) {
-                    EconomyResponse er = VaultHelper.econ.depositPlayer(target, amount);
+                    EconomyResponse er = plugin.getVh().getEcon().depositPlayer(target, amount);
                     if (!er.transactionSuccess()) {
                         // Cannot set
                         sender.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + er.errorMessage);
@@ -191,11 +191,11 @@ class AdminCommands implements CommandExecutor {
                 if (!sender.equals(target)) {
                     sender.sendMessage(ChatColor.GREEN + ((Lang.deposited
                             .replace("[name]", target.getName()))
-                            .replace("[amount]", VaultHelper.econ.format(amount)))
+                            .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                             .replace("[world]", plugin.getWorldName(world)));
                 }
                 target.sendMessage(ChatColor.GREEN + (Lang.increasedBalance
-                        .replace("[amount]", VaultHelper.econ.format(amount)))
+                        .replace("[amount]", plugin.getVh().getEcon().format(amount)))
                         .replace("[world]", plugin.getWorldName(world)));
                 return true;
             }
