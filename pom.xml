@@ -6,7 +6,7 @@
 
 	<groupId>com.wasteofplastic</groupId>
 	<artifactId>mwmoney</artifactId>
-	<version>3.1</version>
+	<version>3.2</version>
 
 	<name>MultiWorldMoney</name>
 	<description>MultiWorldMoney is a plugin that enables money to be kept separately across worlds</description>
