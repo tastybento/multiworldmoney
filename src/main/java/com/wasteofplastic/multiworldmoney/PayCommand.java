@@ -79,11 +79,11 @@ class PayCommand implements CommandExecutor {
                                 sender.sendMessage(ChatColor.GREEN + ((Lang.sendTo
                                         .replace("[name]", target.getName()))
                                         .replace("[amount]", plugin.getVh().getEcon().format(amount)))
-                                        .replace("[world]", player.getWorld().getName()));
+                                        .replace("[world]", plugin.getWorldName(player.getWorld())));
                                 target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
                                         .replace("[name]", sender.getName())
                                         .replace("[amount]", plugin.getVh().getEcon().format(amount)))
-                                        .replace("[world]", player.getWorld().getName()));
+                                        .replace("[world]", plugin.getWorldName(player.getWorld())));
                                 // Override the payment
                                 return true;
                             } else {
@@ -123,11 +123,11 @@ class PayCommand implements CommandExecutor {
             player.sendMessage(ChatColor.GREEN + ((Lang.sendTo
                     .replace("[name]", target.getName()))
                     .replace("[amount]", plugin.getVh().getEcon().format(amount)))
-                    .replace("[world]", player.getWorld().getName()));
+                    .replace("[world]", plugin.getWorldName(player.getWorld())));
             target.sendMessage(ChatColor.GREEN + (Lang.receiveFrom
                     .replace("[name]", player.getName())
                     .replace("[amount]", plugin.getVh().getEcon().format(amount)))
-                    .replace("[world]", player.getWorld().getName()));
+                    .replace("[world]", plugin.getWorldName(player.getWorld())));
         } else {
             // Cannot pay - let pay handle the error
             player.sendMessage(ChatColor.RED + Lang.error + " " + ChatColor.DARK_RED + Lang.insufficientFunds);
